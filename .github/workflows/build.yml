@@ -1,0 +1,110 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Build core
+        run: |
+          chmod +x core/gradlew
+          cd core && ./gradlew build --no-daemon
+
+      - name: Upload core jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: respawnhost-core-jars
+          path: |
+            core/build/libs/*.jar
+            !core/build/libs/*-sources.jar
+
+  variants:
+    runs-on: ubuntu-latest
+    needs: core
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - version: "1.12.2-forge"
+            java: "8"
+          - version: "1.13.2-forge"
+            java: "8"
+          - version: "1.14.4-forge"
+            java: "8"
+          - version: "1.14.4-fabric"
+            java: "17"
+          - version: "1.15.2-forge"
+            java: "8"
+          - version: "1.15.2-fabric"
+            java: "17"
+          - version: "1.16.5-forge"
+            java: "17"
+          - version: "1.16.5-fabric"
+            java: "17"
+          - version: "1.17.1-forge"
+            java: "17"
+          - version: "1.17.1-fabric"
+            java: "17"
+          - version: "1.18.2-forge"
+            java: "17"
+          - version: "1.18.2-fabric"
+            java: "17"
+          - version: "1.19.2-forge"
+            java: "17"
+          - version: "1.19.2-fabric"
+            java: "17"
+          - version: "1.20.1-forge"
+            java: "17"
+          - version: "1.20.1-fabric"
+            java: "17"
+          - version: "1.20.6-neoforge"
+            java: "21"
+          - version: "1.20.6-fabric"
+            java: "21"
+          - version: "1.21.1"
+            java: "21"
+          - version: "26.1-neoforge"
+            java: "26"
+          - version: "26.1-fabric"
+            java: "26"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: gradle
+
+      - name: Build ${{ matrix.version }}
+        run: |
+          chmod +x versions/${{ matrix.version }}/gradlew
+          cd versions/${{ matrix.version }} && ./gradlew build --no-daemon
+
+      - name: Upload ${{ matrix.version }} jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: respawnhost-integration-${{ matrix.version }}-jars
+          path: |
+            versions/${{ matrix.version }}/**/build/libs/*.jar
+            !versions/${{ matrix.version }}/**/build/libs/*-sources.jar
+            !versions/${{ matrix.version }}/**/build/libs/*-dev-shadow.jar

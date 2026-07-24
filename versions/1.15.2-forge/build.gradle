@@ -1,0 +1,90 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+
+version = '1.0.0'
+group = 'com.respawnhost'
+archivesBaseName = 'respawnhost_integration-1.15.2-forge'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+def coreLibsDir = file("${rootDir}/../../core/build/libs")
+def coreJar = file("${coreLibsDir}/respawnhost-core-1.0.0.jar")
+
+task buildCore(type: Exec) {
+    onlyIf { !coreJar.exists() }
+    workingDir "${rootDir}/../../core"
+    environment 'JAVA_HOME', System.getenv('CORE_JAVA_HOME') ?: 'C:/Program Files/BellSoft/LibericaJDK-17-Full'
+    commandLine 'cmd', '/c', 'gradlew.bat', 'jar', '--no-daemon', '-q'
+    outputs.file coreJar
+}
+
+minecraft {
+    mappings channel: 'official', version: '1.15.2'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir { dirs coreLibsDir }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.15.2-31.2.57'
+    compile "com.respawnhost:respawnhost-core:1.0.0"
+}
+
+compileJava.dependsOn buildCore
+
+jar {
+    dependsOn buildCore
+    from(zipTree(coreJar)) {
+        exclude 'com/google/**'
+        exclude 'META-INF/**'
+    }
+    manifest {
+        attributes([
+            "Specification-Title": "respawnhost_integration",
+            "Specification-Vendor": "respawnhost",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor": "respawnhost",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}

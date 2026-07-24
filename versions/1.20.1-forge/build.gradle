@@ -1,0 +1,78 @@
+plugins {
+    id "java-library"
+    id "net.minecraftforge.gradle" version "[6.0,6.2)"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = "${project.archives_base_name}-1.20.1-forge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: project.mapping_channel, version: project.mapping_version
+
+    copyIdeResources = true
+
+    runs {
+        client {
+            workingDirectory project.file("run")
+            property "forge.logging.markers", "REGISTRIES"
+            property "forge.logging.console.level", "debug"
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    shade
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+    shade("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
+}
+
+processResources {
+    def replaceProperties = [version: project.version]
+    inputs.properties replaceProperties
+
+    filesMatching("META-INF/mods.toml") {
+        expand replaceProperties
+    }
+}
+
+jar {
+    from({
+        configurations.shade.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "module-info.class"
+    }
+    manifest {
+        attributes([
+                "Specification-Title"   : "respawnhost_integration",
+                "Specification-Vendor"  : "RespawnHost",
+                "Specification-Version" : "1",
+                "Implementation-Title"  : project.name,
+                "Implementation-Version": project.version,
+                "Implementation-Vendor" : "RespawnHost"
+        ])
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release.set(17)
+}

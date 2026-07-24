@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "respawnhost_integration",
+  "version": "${version}",
+  "name": "RespawnHost Integration Menu",
+  "description": "Order and configure RespawnHost servers directly from the multiplayer menu.",
+  "environment": "client",
+  "license": "MIT",
+  "authors": [
+    "RespawnHost"
+  ],
+  "contact": {
+    "homepage": "https://respawnhost.com"
+  },
+  "entrypoints": {
+    "client": [
+      "com.respawnhost.integration.fabric.RespawnHostIntegrationFabric"
+    ]
+  },
+  "mixins": [
+    "respawnhost_integration.mixins.json"
+  ],
+  "depends": {
+    "java": ">=25",
+    "minecraft": ">=26.1 <26.2",
+    "fabric-loader": ">=0.19.3",
+    "fabric-api": "*"
+  }
+}

@@ -1,0 +1,63 @@
+plugins {
+    id "java-library"
+    id "net.neoforged.moddev" version "2.0.142"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+    mavenCentral()
+}
+
+neoForge {
+    version = project.neoforge_version
+
+    mods {
+        respawnhost_integration {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+configurations {
+    bundle
+}
+
+dependencies {
+    implementation "com.respawnhost:respawnhost-core:1.0.0"
+    bundle("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
+}
+
+processResources {
+    def replaceProperties = [version: project.version]
+    inputs.properties replaceProperties
+
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand replaceProperties
+    }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.bundle.elements.map {
+        it.collect { file -> zipTree(file) }
+    }) {
+        exclude "com/google/**"
+        exclude "module-info.class"
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release.set(25)
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(26)
+    withSourcesJar()
+}

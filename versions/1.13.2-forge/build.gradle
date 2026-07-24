@@ -1,0 +1,83 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+
+version = '1.0.0'
+group = 'com.respawnhost'
+archivesBaseName = 'respawnhost_integration-1.13.2-forge'
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+
+minecraft {
+    mappings channel: 'snapshot', version: '20180921-1.13'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.13.2-25.0.219'
+    compile 'com.respawnhost:respawnhost-core:1.0.0'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    from({
+        configurations.compile.findAll { it.name.contains('respawnhost-core') }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'com/google/gson/**'
+    }
+    manifest {
+        attributes([
+            'Specification-Title'   : 'respawnhost_integration',
+            'Specification-Vendor'  : 'respawnhost',
+            'Specification-Version' : '1',
+            'Implementation-Title'  : project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor' : 'respawnhost'
+        ])
+    }
+}
+
+jar.finalizedBy('reobfJar')

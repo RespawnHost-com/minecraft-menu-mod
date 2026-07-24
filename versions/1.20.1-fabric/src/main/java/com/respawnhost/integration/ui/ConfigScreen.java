@@ -1,0 +1,76 @@
+package com.respawnhost.integration.ui;
+
+import com.respawnhost.integration.config.RespawnConfig;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.CyclingButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
+
+public class ConfigScreen extends Screen {
+    private final Screen parent;
+    private TextFieldWidget partnerIdBox;
+    private TextFieldWidget packIdBox;
+    private CyclingButtonWidget<Boolean> showButtonToggle;
+
+    public ConfigScreen(Screen parent) {
+        super(Text.translatable("screen.respawnhost_integration.config.title"));
+        this.parent = parent;
+    }
+
+    @Override
+    protected void init() {
+        RespawnConfig config = RespawnConfig.get();
+        int centerX = this.width / 2;
+
+        partnerIdBox = new TextFieldWidget(this.textRenderer, centerX - 100, 60, 200, 20,
+                Text.translatable("screen.respawnhost_integration.config.partner_id"));
+        partnerIdBox.setMaxLength(128);
+        partnerIdBox.setText(config.partnerId());
+        addDrawableChild(partnerIdBox);
+
+        packIdBox = new TextFieldWidget(this.textRenderer, centerX - 100, 110, 200, 20,
+                Text.translatable("screen.respawnhost_integration.config.pack_id"));
+        packIdBox.setMaxLength(128);
+        packIdBox.setText(config.packId());
+        addDrawableChild(packIdBox);
+
+        showButtonToggle = CyclingButtonWidget.onOffBuilder(config.showOrderButton())
+                .build(centerX - 100, 150, 200, 20,
+                        Text.translatable("screen.respawnhost_integration.config.show_button"),
+                        (button, value) -> {
+                        });
+        addDrawableChild(showButtonToggle);
+
+        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.respawnhost_integration.config.save"), button -> {
+                    RespawnConfig cfg = RespawnConfig.get();
+                    cfg.partnerId(partnerIdBox.getText().trim());
+                    cfg.packId(packIdBox.getText().trim());
+                    cfg.showOrderButton(showButtonToggle.getValue());
+                    cfg.save();
+                    close();
+                })
+                .dimensions(centerX - 100, this.height - 28, 200, 20)
+                .build());
+    }
+
+    @Override
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        super.render(context, mouseX, mouseY, delta);
+        context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 10, 0xFFFFFF);
+        context.drawTextWithShadow(this.textRenderer,
+                Text.translatable("screen.respawnhost_integration.config.partner_id"),
+                this.width / 2 - 100, 48, 0xAAAAAA);
+        context.drawTextWithShadow(this.textRenderer,
+                Text.translatable("screen.respawnhost_integration.config.pack_id"),
+                this.width / 2 - 100, 98, 0xAAAAAA);
+    }
+
+    @Override
+    public void close() {
+        if (this.client != null) {
+            this.client.setScreen(parent);
+        }
+    }
+}

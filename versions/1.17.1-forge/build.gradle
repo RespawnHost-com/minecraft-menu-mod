@@ -1,0 +1,99 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'maven-publish'
+
+version = '1.0.0'
+group = 'com.respawnhost.integration'
+archivesBaseName = 'respawnhost-integration-1.17.1-forge'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: '1.17.1'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+}
+
+configurations {
+    fatjar
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.17.1-37.1.1'
+    implementation('com.respawnhost:respawnhost-core:1.0.0') { transitive = false }
+    fatjar('com.respawnhost:respawnhost-core:1.0.0') { transitive = false }
+}
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'     : 'respawnhost_integration',
+                'Specification-Vendor'    : 'RespawnHost',
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : 'RespawnHost',
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+    from({
+        configurations.fatjar.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'com/google/gson/**'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/*.RSA'
+    }
+}
+
+jar.finalizedBy('reobfJar')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
+    }
+}

@@ -1,0 +1,31 @@
+plugins {
+    id "java-library"
+}
+
+architectury {
+    common(rootProject.enabled_platforms.split(","))
+}
+
+configurations {
+    developmentFabric
+    developmentNeoForge
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+    modApi "dev.architectury:architectury:${rootProject.architectury_version}"
+
+    api "com.respawnhost:respawnhost-core:1.0.0"
+
+    developmentFabric "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+    developmentNeoForge "net.neoforged:neoforge:${rootProject.neoforge_version}"
+}
+
+publishing {
+    publications {
+        mavenCommon(MavenPublication) {
+            artifactId = "${rootProject.archives_base_name}-${project.name}"
+            from components.java
+        }
+    }
+}

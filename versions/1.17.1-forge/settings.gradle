@@ -1,0 +1,3 @@
+rootProject.name = 'respawnhost-1.17.1-forge'
+
+includeBuild('../../core')

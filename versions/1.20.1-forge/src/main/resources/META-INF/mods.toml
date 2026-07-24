@@ -1,0 +1,25 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "respawnhost_integration"
+version = "${version}"
+displayName = "RespawnHost Integration Menu"
+description = "Order and configure RespawnHost servers directly from the multiplayer menu."
+authors = "RespawnHost"
+displayURL = "https://respawnhost.com"
+
+[[dependencies.respawnhost_integration]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.respawnhost_integration]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,1.21)"
+ordering = "NONE"
+side = "CLIENT"

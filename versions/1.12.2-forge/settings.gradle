@@ -1,0 +1,3 @@
+rootProject.name = 'respawnhost-1.12.2-forge'
+
+includeBuild('core-shim')

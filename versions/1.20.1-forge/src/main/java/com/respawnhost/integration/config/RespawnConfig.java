@@ -1,0 +1,95 @@
+package com.respawnhost.integration.config;
+
+import com.respawnhost.core.config.ConfigStore;
+import com.respawnhost.core.config.RespawnConfigData;
+
+import java.nio.file.Path;
+
+public final class RespawnConfig {
+    private static final String FILE_NAME = "respawnhost_integration.json";
+    private static volatile Path configDir;
+    private static volatile RespawnConfig instance;
+
+    private final ConfigStore store;
+    private final RespawnConfigData data;
+
+    private RespawnConfig(ConfigStore store, RespawnConfigData data) {
+        this.store = store;
+        this.data = data;
+    }
+
+    public static void init(Path dir) {
+        configDir = dir;
+    }
+
+    public static RespawnConfig get() {
+        RespawnConfig current = instance;
+        if (current == null) {
+            synchronized (RespawnConfig.class) {
+                current = instance;
+                if (current == null) {
+                    Path dir = configDir;
+                    if (dir == null) {
+                        throw new IllegalStateException("RespawnConfig not initialized");
+                    }
+                    ConfigStore store = new ConfigStore(dir.resolve(FILE_NAME));
+                    current = new RespawnConfig(store, store.load());
+                    instance = current;
+                }
+            }
+        }
+        return current;
+    }
+
+    public synchronized void save() {
+        store.save(data);
+    }
+
+    public String partnerId() {
+        return data.getPartnerId();
+    }
+
+    public void partnerId(String partnerId) {
+        data.setPartnerId(partnerId);
+    }
+
+    public String packId() {
+        return data.getPackId();
+    }
+
+    public void packId(String packId) {
+        data.setPackId(packId);
+    }
+
+    public String apiBaseUrl() {
+        return data.getApiBaseUrl();
+    }
+
+    public String orderBaseUrl() {
+        return data.getOrderBaseUrl();
+    }
+
+    public String panelBaseUrl() {
+        return data.getPanelBaseUrl();
+    }
+
+    public String gameShort() {
+        return data.getGameShort();
+    }
+
+    public String region() {
+        return data.getRegion();
+    }
+
+    public void region(String region) {
+        data.setRegion(region);
+    }
+
+    public boolean showOrderButton() {
+        return data.isShowOrderButton();
+    }
+
+    public void showOrderButton(boolean showOrderButton) {
+        data.setShowOrderButton(showOrderButton);
+    }
+}

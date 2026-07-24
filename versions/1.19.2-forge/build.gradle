@@ -1,0 +1,104 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[5.1,6)'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = 'respawnhost-integration-1.19.2-forge'
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: 'official', version: '1.19.2'
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'forge.enabledGameTestNamespaces', mod_id
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    fatCore
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:1.19.2-43.4.0"
+
+    implementation("com.respawnhost:respawnhost-core:1.0.0") {
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    fatCore("com.respawnhost:respawnhost-core:1.0.0") {
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [mod_version: mod_version]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml']) {
+        expand replaceProperties
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+
+    from({
+        configurations.fatCore.collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'module-info.class'
+    }
+
+    finalizedBy 'reobfJar'
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact jar
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(17)
+}

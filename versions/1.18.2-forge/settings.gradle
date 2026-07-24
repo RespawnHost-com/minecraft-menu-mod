@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'respawnhost-1.18.2-forge'
+
+includeBuild("../../core")

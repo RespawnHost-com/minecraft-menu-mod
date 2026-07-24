@@ -1,0 +1,44 @@
+plugins {
+    id "fabric-loom" version "1.7-SNAPSHOT"
+    id "java-library"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = "${project.archives_base_name}-1.20.1-fabric"
+}
+
+repositories {
+    mavenCentral()
+    maven { url = "https://maven.fabricmc.net/" }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+    implementation("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
+    include("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
+}
+
+processResources {
+    def replaceProperties = [version: project.version]
+    inputs.properties replaceProperties
+
+    filesMatching("fabric.mod.json") {
+        expand replaceProperties
+    }
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.encoding = "UTF-8"
+    it.options.release.set(17)
+}

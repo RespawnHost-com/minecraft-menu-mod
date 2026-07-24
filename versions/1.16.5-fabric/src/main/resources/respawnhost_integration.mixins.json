@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.respawnhost.integration.fabric.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "respawnhost_integration-1.16.5-fabric-refmap.json",
+  "client": [
+    "MultiplayerScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

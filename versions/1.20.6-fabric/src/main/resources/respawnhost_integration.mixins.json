@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.respawnhost.integration.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "MultiplayerScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

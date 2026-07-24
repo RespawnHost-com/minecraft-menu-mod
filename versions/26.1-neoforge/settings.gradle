@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        maven { url "https://maven.neoforged.net/releases" }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'respawnhost-26.1-neoforge'
+
+includeBuild("../../core")
