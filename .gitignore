@@ -15,3 +15,5 @@ bin/
 .vscode/
 logs/
 *.log
+
+build.pid
