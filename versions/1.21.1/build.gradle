@@ -37,7 +37,7 @@ allprojects {
     apply plugin: "java"
     apply plugin: "maven-publish"
 
-    version = rootProject.mod_version
+    version = rootProject.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: rootProject.mod_version
     group = rootProject.maven_group
 
     tasks.withType(JavaCompile).configureEach {

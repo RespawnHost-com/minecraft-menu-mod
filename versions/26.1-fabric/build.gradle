@@ -3,7 +3,7 @@ plugins {
     id "net.fabricmc.fabric-loom" version "1.17.17"
 }
 
-version = project.mod_version
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: project.mod_version
 group = project.maven_group
 
 base {

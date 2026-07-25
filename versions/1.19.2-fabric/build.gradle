@@ -4,7 +4,7 @@ plugins {
     id 'maven-publish'
 }
 
-version = mod_version
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: mod_version
 group = maven_group
 
 base {

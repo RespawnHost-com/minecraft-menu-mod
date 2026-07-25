@@ -9,7 +9,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle'
 
-version = '1.0.0'
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: "1.0.0"
 group = 'com.respawnhost'
 archivesBaseName = 'respawnhost_integration-1.15.2-forge'
 

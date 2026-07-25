@@ -3,7 +3,7 @@ plugins {
     id "net.minecraftforge.gradle" version "[6.0,6.2)"
 }
 
-version = project.mod_version
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: project.mod_version
 group = project.maven_group
 
 base {

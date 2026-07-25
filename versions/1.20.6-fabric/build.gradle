@@ -10,7 +10,7 @@ base {
     archivesName = "respawnhost-integration-1.20.6-fabric"
 }
 
-version = project.mod_version
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: project.mod_version
 group = project.maven_group
 
 repositories {

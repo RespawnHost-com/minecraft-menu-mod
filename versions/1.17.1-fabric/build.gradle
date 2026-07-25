@@ -2,7 +2,7 @@ plugins {
     id 'fabric-loom' version '1.7-SNAPSHOT'
 }
 
-version = '1.0.0'
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: "1.0.0"
 group = 'com.respawnhost.integration'
 
 base {
