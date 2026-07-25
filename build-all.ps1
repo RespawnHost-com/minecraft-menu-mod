@@ -20,8 +20,11 @@ $javaHomes = @{
     "versions\1.18.2-fabric"   = $jdk17
     "versions\1.19.2-forge"    = $jdk17
     "versions\1.19.2-fabric"   = $jdk17
+    "versions\1.19.4-forge"    = $jdk17
+    "versions\1.19.4-fabric"   = $jdk17
     "versions\1.20.1-forge"    = $jdk17
     "versions\1.20.1-fabric"   = $jdk17
+    "versions\1.20.4-neoforge" = $jdk17
     "versions\26.1-fabric"     = $jdk26
     "versions\26.1-neoforge"   = $jdk26
 }

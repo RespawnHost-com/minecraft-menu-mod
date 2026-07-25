@@ -14,19 +14,26 @@ Order and configure [RespawnHost](https://respawnhost.com) servers directly from
 
 ## Supported versions
 
+Every Minecraft release from 1.12 up to 26.1 is supported. One jar covers its whole segment — mappings are version-stable within a segment, so e.g. the 1.16.5 jar runs on every 1.16.x.
+
 | Minecraft | Forge | NeoForge | Fabric |
 |---|---|---|---|
-| 1.12.2 | ✔ | — | — |
-| 1.13.2 | ✔ | — | — |
-| 1.14.4 | ✔ | — | ✔ |
-| 1.15.2 | ✔ | — | ✔ |
-| 1.16.5 | ✔ | — | ✔ |
-| 1.17.1 | ✔ | — | ✔ |
-| 1.18.2 | ✔ | — | ✔ |
-| 1.19.2 | ✔ | — | ✔ |
-| 1.20.1 | ✔ | — | ✔ |
-| 1.20.6 | — | ✔ | ✔ |
-| 1.21.1 | — | ✔ | ✔ |
+| 1.12 – 1.12.2 | ✔ | — | — |
+| 1.13 – 1.13.2 | ✔ | — | — |
+| 1.14 – 1.14.4 | ✔ | — | ✔ |
+| 1.15 – 1.15.2 | ✔ | — | ✔ |
+| 1.16 – 1.16.5 | ✔ | — | ✔ |
+| 1.17 – 1.17.1 | ✔ | — | ✔ |
+| 1.18 – 1.18.2 | ✔ | — | ✔ |
+| 1.19 – 1.19.2 | ✔ | — | ✔ |
+| 1.19.3 – 1.19.4 | ✔ | — | ✔ |
+| 1.20 – 1.20.1 | ✔ | — | ✔ |
+| 1.20.2 – 1.20.4 | — | ✔ | ✔ |
+| 1.20.5 – 1.20.6 | — | ✔ | ✔ |
+| 1.21 – 1.21.1 | — | ✔ | ✔ |
+| 1.21.2 – 1.21.5 | — | ✔ | ✔ |
+| 1.21.6 – 1.21.10 | — | ✔ | ✔ |
+| 1.21.11 | — | ✔ | ✔ |
 | 26.1 | — | ✔ | ✔ |
 
 ## Installation

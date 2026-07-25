@@ -19,6 +19,6 @@ side="CLIENT"
 [[dependencies.respawnhost_integration]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.13.2,1.14)"
+versionRange="[1.13,1.14)"
 ordering="NONE"
 side="CLIENT"
