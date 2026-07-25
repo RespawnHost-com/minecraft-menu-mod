@@ -1,0 +1,29 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'com.respawnhost'
+version = '1.0.0'
+archivesBaseName = 'respawnhost-core'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    api 'com.google.code.gson:gson:2.10.1'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '../../../core/src/main/java'
+        }
+    }
+}
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+    options.encoding = 'UTF-8'
+}

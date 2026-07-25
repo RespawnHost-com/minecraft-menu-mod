@@ -15,17 +15,6 @@ archivesBaseName = 'respawnhost_integration-1.15.2-forge'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
-def coreLibsDir = file("${rootDir}/../../core/build/libs")
-def coreJar = file("${coreLibsDir}/respawnhost-core-1.0.0.jar")
-
-task buildCore(type: Exec) {
-    onlyIf { !coreJar.exists() }
-    workingDir "${rootDir}/../../core"
-    environment 'JAVA_HOME', System.getenv('CORE_JAVA_HOME') ?: 'C:/Program Files/BellSoft/LibericaJDK-17-Full'
-    commandLine 'cmd', '/c', 'gradlew.bat', 'jar', '--no-daemon', '-q'
-    outputs.file coreJar
-}
-
 minecraft {
     mappings channel: 'official', version: '1.15.2'
 
@@ -59,7 +48,6 @@ minecraft {
 }
 
 repositories {
-    flatDir { dirs coreLibsDir }
     mavenCentral()
 }
 
@@ -68,13 +56,12 @@ dependencies {
     compile "com.respawnhost:respawnhost-core:1.0.0"
 }
 
-compileJava.dependsOn buildCore
-
 jar {
-    dependsOn buildCore
-    from(zipTree(coreJar)) {
-        exclude 'com/google/**'
-        exclude 'META-INF/**'
+    from({
+        configurations.compile.findAll { it.name.contains('respawnhost-core') }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'com/google/gson/**'
     }
     manifest {
         attributes([
@@ -88,3 +75,5 @@ jar {
         ])
     }
 }
+
+jar.finalizedBy('reobfJar')
