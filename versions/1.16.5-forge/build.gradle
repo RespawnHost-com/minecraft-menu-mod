@@ -1,116 +1,79 @@
-plugins {
-    id 'eclipse'
-    id 'idea'
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
 }
+apply plugin: 'net.minecraftforge.gradle'
 
-version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: mod_version
-group = mod_group_id
+version = project.findProperty("mod_version") ?: System.getenv("MOD_VERSION") ?: "1.0.0"
+group = 'com.respawnhost'
+archivesBaseName = 'respawnhost_integration-1.16.5-forge'
 
-base {
-    archivesName = archives_base_name
-}
-
-println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    mappings channel: mapping_channel, version: mapping_version
-
-    copyIdeResources = true
+    mappings channel: 'official', version: '1.16.5'
 
     runs {
-        configureEach {
+        client {
             workingDirectory project.file('run')
 
-            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
             property 'forge.logging.console.level', 'debug'
 
             mods {
-                "${mod_id}" {
+                respawnhost_integration {
                     source sourceSets.main
                 }
             }
         }
 
-        client {
-        }
-
         server {
-            args '--nogui'
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                respawnhost_integration {
+                    source sourceSets.main
+                }
+            }
         }
     }
 }
 
 repositories {
-}
-
-configurations {
-    bundle
+    mavenCentral()
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-
-    implementation("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
-    bundle("com.respawnhost:respawnhost-core:1.0.0") { transitive = false }
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.42'
+    compile "com.respawnhost:respawnhost-core:1.0.0"
 }
 
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
-            forge_version: forge_version, forge_version_range: forge_version_range,
-            loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors: mod_authors, mod_description: mod_description,
-    ]
-    inputs.properties replaceProperties
-
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
-    }
-}
-
-tasks.named('jar', Jar).configure {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
+jar {
     from({
-        configurations.bundle.files.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.compile.findAll { it.name.contains('respawnhost-core') }
+                .collect { it.isDirectory() ? it : zipTree(it) }
     }) {
-        exclude 'META-INF/MANIFEST.MF'
         exclude 'com/google/gson/**'
-        exclude 'module-info.class'
     }
-
     manifest {
         attributes([
-                'Specification-Title'     : mod_id,
-                'Specification-Vendor'    : mod_authors,
-                'Specification-Version'   : '1',
-                'Implementation-Title'    : project.name,
-                'Implementation-Version'  : project.jar.archiveVersion,
-                'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+            "Specification-Title": "respawnhost_integration",
+            "Specification-Vendor": "respawnhost",
+            "Specification-Version": "1",
+            "Implementation-Title": project.name,
+            "Implementation-Version": "${version}",
+            "Implementation-Vendor": "respawnhost",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
-
-    finalizedBy 'reobfJar'
 }
 
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) {
-            artifact jar
-        }
-    }
-    repositories {
-        maven {
-            url "file://${project.projectDir}/mcmodsrepo"
-        }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = 8
-}
+jar.finalizedBy('reobfJar')

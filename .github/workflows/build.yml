@@ -55,7 +55,7 @@ jobs:
           - version: "1.15.2-fabric"
             java: "17"
           - version: "1.16.5-forge"
-            java: "17"
+            java: "8"
           - version: "1.16.5-fabric"
             java: "17"
           - version: "1.17.1-forge"
