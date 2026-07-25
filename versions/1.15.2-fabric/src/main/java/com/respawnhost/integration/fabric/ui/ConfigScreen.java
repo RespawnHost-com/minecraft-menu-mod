@@ -10,7 +10,7 @@ import net.minecraft.text.TranslatableText;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private TextFieldWidget partnerIdBox;
+    private TextFieldWidget creatorCodeBox;
     private TextFieldWidget packIdBox;
     private boolean showOrderButton;
 
@@ -34,11 +34,11 @@ public class ConfigScreen extends Screen {
         RespawnConfig config = RespawnConfig.get();
         int centerX = this.width / 2;
 
-        partnerIdBox = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, centerX - 100, 60, 200, 20,
-                tr(LangKeys.CONFIG_PARTNER_ID));
-        partnerIdBox.setMaxLength(128);
-        partnerIdBox.setText(config.getPartnerId());
-        this.addButton(partnerIdBox);
+        creatorCodeBox = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, centerX - 100, 60, 200, 20,
+                tr(LangKeys.CONFIG_CREATOR_CODE));
+        creatorCodeBox.setMaxLength(128);
+        creatorCodeBox.setText(config.creatorCode());
+        this.addButton(creatorCodeBox);
 
         packIdBox = new TextFieldWidget(MinecraftClient.getInstance().textRenderer, centerX - 100, 110, 200, 20,
                 tr(LangKeys.CONFIG_PACK_ID));
@@ -54,7 +54,7 @@ public class ConfigScreen extends Screen {
         this.addButton(new ButtonWidget(centerX - 100, this.height - 28, 200, 20,
                 tr(LangKeys.CONFIG_SAVE), button -> {
             RespawnConfig cfg = RespawnConfig.get();
-            cfg.setPartnerId(partnerIdBox.getText().trim());
+            cfg.creatorCode(creatorCodeBox.getText().trim());
             cfg.setPackId(packIdBox.getText().trim());
             cfg.setShowOrderButton(showOrderButton);
             cfg.save();
@@ -69,7 +69,7 @@ public class ConfigScreen extends Screen {
         this.drawCenteredString(MinecraftClient.getInstance().textRenderer, tr(LangKeys.CONFIG_TITLE),
                 this.width / 2, 10, 0xFFFFFF);
         this.drawString(MinecraftClient.getInstance().textRenderer,
-                tr(LangKeys.CONFIG_PARTNER_ID),
+                tr(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         this.drawString(MinecraftClient.getInstance().textRenderer,
                 tr(LangKeys.CONFIG_PACK_ID),

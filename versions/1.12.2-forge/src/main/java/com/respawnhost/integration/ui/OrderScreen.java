@@ -200,6 +200,7 @@ public class OrderScreen extends GuiScreen {
                 int index = button.id - ID_ORDER_BASE;
                 List<ServerPlan> current = plans;
                 if (current != null && index >= 0 && index < current.size()) {
+                    client.trackCreatorCode(RespawnConfig.get().creatorCode());
                     openUrl(client.buildOrderUrl(current.get(index), hourlySelected,
                             TERM_OPTIONS[termIndex], regionSelected, uiLang()));
                 }

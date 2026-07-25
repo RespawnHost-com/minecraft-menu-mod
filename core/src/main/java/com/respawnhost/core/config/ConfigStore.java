@@ -29,11 +29,15 @@ public final class ConfigStore {
         if (Files.exists(file)) {
             Reader reader = null;
             try {
-                reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
-                RespawnConfigData data = GSON.fromJson(reader, RespawnConfigData.class);
-                if (data != null) {
-                    return sanitize(data);
-                }
+            reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
+            com.google.gson.JsonObject json = GSON.fromJson(reader, com.google.gson.JsonObject.class);
+            if (json != null && !json.has("creator_code") && json.has("partner_id")) {
+                json.add("creator_code", json.remove("partner_id"));
+            }
+            RespawnConfigData data = GSON.fromJson(json, RespawnConfigData.class);
+            if (data != null) {
+                return sanitize(data);
+            }
                 LOGGER.warning("Config file " + file + " was empty, using defaults");
             } catch (Exception e) {
                 LOGGER.warning("Failed to read config file " + file + ", using defaults: " + e);
@@ -72,7 +76,7 @@ public final class ConfigStore {
     }
 
     private static RespawnConfigData sanitize(RespawnConfigData data) {
-        data.setPartnerId(data.getPartnerId());
+        data.setCreatorCode(data.getCreatorCode());
         data.setPackId(data.getPackId());
         data.setApiBaseUrl(data.getApiBaseUrl());
         data.setOrderBaseUrl(data.getOrderBaseUrl());

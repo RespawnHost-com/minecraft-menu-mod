@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private EditBox partnerIdBox;
+    private EditBox creatorCodeBox;
     private EditBox packIdBox;
     private CycleButton<Boolean> showButtonToggle;
 
@@ -24,11 +24,11 @@ public class ConfigScreen extends Screen {
         RespawnConfig config = RespawnConfig.get();
         int centerX = this.width / 2;
 
-        partnerIdBox = new EditBox(this.font, centerX - 100, 60, 200, 20,
-                Component.translatable("screen.respawnhost_integration.config.partner_id"));
-        partnerIdBox.setMaxLength(128);
-        partnerIdBox.setValue(config.partnerId());
-        addRenderableWidget(partnerIdBox);
+        creatorCodeBox = new EditBox(this.font, centerX - 100, 60, 200, 20,
+                Component.translatable("screen.respawnhost_integration.config.creator_code"));
+        creatorCodeBox.setMaxLength(128);
+        creatorCodeBox.setValue(config.creatorCode());
+        addRenderableWidget(creatorCodeBox);
 
         packIdBox = new EditBox(this.font, centerX - 100, 110, 200, 20,
                 Component.translatable("screen.respawnhost_integration.config.pack_id"));
@@ -45,7 +45,7 @@ public class ConfigScreen extends Screen {
 
         addRenderableWidget(Button.builder(Component.translatable("screen.respawnhost_integration.config.save"), button -> {
                     RespawnConfig cfg = RespawnConfig.get();
-                    cfg.partnerId(partnerIdBox.getValue().trim());
+                    cfg.creatorCode(creatorCodeBox.getValue().trim());
                     cfg.packId(packIdBox.getValue().trim());
                     cfg.showOrderButton(showButtonToggle.getValue());
                     cfg.save();
@@ -60,7 +60,7 @@ public class ConfigScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
         guiGraphics.drawString(this.font,
-                Component.translatable("screen.respawnhost_integration.config.partner_id"),
+                Component.translatable("screen.respawnhost_integration.config.creator_code"),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         guiGraphics.drawString(this.font,
                 Component.translatable("screen.respawnhost_integration.config.pack_id"),

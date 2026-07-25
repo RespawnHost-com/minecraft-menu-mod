@@ -35,12 +35,12 @@ public final class RespawnConfig {
         store.save(data);
     }
 
-    public String getPartnerId() {
-        return data.getPartnerId();
+    public String creatorCode() {
+        return data.getCreatorCode();
     }
 
-    public void setPartnerId(String partnerId) {
-        data.setPartnerId(partnerId);
+    public void creatorCode(String creatorCode) {
+        data.setCreatorCode(creatorCode);
     }
 
     public String getPackId() {

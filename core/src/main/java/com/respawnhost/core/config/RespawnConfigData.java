@@ -1,7 +1,7 @@
 package com.respawnhost.core.config;
 
 public class RespawnConfigData {
-    private String partnerId = "";
+    private String creatorCode = "";
     private String packId = "";
     private String apiBaseUrl = "https://respawnhost.com/api";
     private String orderBaseUrl = "https://respawnhost.com/order";
@@ -10,12 +10,12 @@ public class RespawnConfigData {
     private String region = "eu";
     private boolean showOrderButton = true;
 
-    public String getPartnerId() {
-        return partnerId;
+    public String getCreatorCode() {
+        return creatorCode;
     }
 
-    public void setPartnerId(String partnerId) {
-        this.partnerId = partnerId == null ? "" : partnerId;
+    public void setCreatorCode(String creatorCode) {
+        this.creatorCode = creatorCode == null ? "" : creatorCode;
     }
 
     public String getPackId() {

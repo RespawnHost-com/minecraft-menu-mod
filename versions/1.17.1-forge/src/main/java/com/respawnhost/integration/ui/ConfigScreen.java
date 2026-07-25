@@ -11,7 +11,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private EditBox partnerIdBox;
+    private EditBox creatorCodeBox;
     private EditBox packIdBox;
     private boolean showOrderButton;
 
@@ -31,11 +31,11 @@ public class ConfigScreen extends Screen {
         this.showOrderButton = config.showOrderButton();
         int centerX = this.width / 2;
 
-        partnerIdBox = new EditBox(this.font, centerX - 100, 60, 200, 20,
-                new TranslatableComponent(LangKeys.CONFIG_PARTNER_ID));
-        partnerIdBox.setMaxLength(128);
-        partnerIdBox.setValue(config.partnerId());
-        addRenderableWidget(partnerIdBox);
+        creatorCodeBox = new EditBox(this.font, centerX - 100, 60, 200, 20,
+                new TranslatableComponent(LangKeys.CONFIG_CREATOR_CODE));
+        creatorCodeBox.setMaxLength(128);
+        creatorCodeBox.setValue(config.creatorCode());
+        addRenderableWidget(creatorCodeBox);
 
         packIdBox = new EditBox(this.font, centerX - 100, 110, 200, 20,
                 new TranslatableComponent(LangKeys.CONFIG_PACK_ID));
@@ -51,7 +51,7 @@ public class ConfigScreen extends Screen {
         addRenderableWidget(new Button(centerX - 100, this.height - 28, 200, 20,
                 new TranslatableComponent(LangKeys.CONFIG_SAVE), button -> {
             RespawnConfig cfg = RespawnConfig.get();
-            cfg.partnerId(partnerIdBox.getValue().trim());
+            cfg.creatorCode(creatorCodeBox.getValue().trim());
             cfg.packId(packIdBox.getValue().trim());
             cfg.showOrderButton(this.showOrderButton);
             cfg.save();
@@ -64,7 +64,7 @@ public class ConfigScreen extends Screen {
         super.render(poseStack, mouseX, mouseY, partialTick);
         drawCenteredString(poseStack, this.font, this.title, this.width / 2, 10, 0xFFFFFF);
         drawString(poseStack, this.font,
-                new TranslatableComponent(LangKeys.CONFIG_PARTNER_ID),
+                new TranslatableComponent(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         drawString(poseStack, this.font,
                 new TranslatableComponent(LangKeys.CONFIG_PACK_ID),

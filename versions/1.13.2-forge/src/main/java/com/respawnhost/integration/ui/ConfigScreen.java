@@ -12,7 +12,7 @@ public class ConfigScreen extends GuiScreen {
     private static final int ID_BACK = 3;
 
     private final GuiScreen parent;
-    private GuiTextField partnerIdBox;
+    private GuiTextField creatorCodeBox;
     private GuiTextField packIdBox;
     private boolean showButton;
 
@@ -25,10 +25,10 @@ public class ConfigScreen extends GuiScreen {
     protected void initGui() {
         int centerX = this.width / 2;
 
-        partnerIdBox = new GuiTextField(0, this.fontRenderer, centerX - 100, 60, 200, 20);
-        partnerIdBox.setMaxStringLength(128);
-        partnerIdBox.setText(RespawnConfig.get().partnerId());
-        this.children.add(partnerIdBox);
+        creatorCodeBox = new GuiTextField(0, this.fontRenderer, centerX - 100, 60, 200, 20);
+        creatorCodeBox.setMaxStringLength(128);
+        creatorCodeBox.setText(RespawnConfig.get().creatorCode());
+        this.children.add(creatorCodeBox);
 
         packIdBox = new GuiTextField(1, this.fontRenderer, centerX - 100, 110, 200, 20);
         packIdBox.setMaxStringLength(128);
@@ -47,7 +47,7 @@ public class ConfigScreen extends GuiScreen {
         addButton(new RunnableButton(ID_SAVE, centerX - 100, this.height - 28, 98, 20,
                 I18n.format(LangKeys.CONFIG_SAVE), () -> {
             RespawnConfig config = RespawnConfig.get();
-            config.partnerId(partnerIdBox.getText().trim());
+            config.creatorCode(creatorCodeBox.getText().trim());
             config.packId(packIdBox.getText().trim());
             config.showOrderButton(showButton);
             config.save();
@@ -66,7 +66,7 @@ public class ConfigScreen extends GuiScreen {
 
     @Override
     public void tick() {
-        partnerIdBox.tick();
+        creatorCodeBox.tick();
         packIdBox.tick();
     }
 
@@ -75,11 +75,11 @@ public class ConfigScreen extends GuiScreen {
         drawDefaultBackground();
         super.render(mouseX, mouseY, partialTicks);
         drawCenteredString(this.fontRenderer, I18n.format(LangKeys.CONFIG_TITLE), this.width / 2, 10, 0xFFFFFF);
-        drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_PARTNER_ID),
+        drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_PACK_ID),
                 this.width / 2 - 100, 98, 0xAAAAAA);
-        partnerIdBox.drawTextField(mouseX, mouseY, partialTicks);
+        creatorCodeBox.drawTextField(mouseX, mouseY, partialTicks);
         packIdBox.drawTextField(mouseX, mouseY, partialTicks);
     }
 

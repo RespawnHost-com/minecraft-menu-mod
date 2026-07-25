@@ -42,7 +42,7 @@ Drop the jar matching your Minecraft version and loader into your `mods` folder.
 
 ```json
 {
-  "partner_id": "",
+  "creator_code": "",
   "pack_id": "",
   "api_base_url": "https://respawnhost.com/api",
   "panel_base_url": "https://panel.respawnhost.com",
@@ -51,6 +51,8 @@ Drop the jar matching your Minecraft version and loader into your `mods` folder.
   "show_order_button": true
 }
 ```
+
+`creator_code` is your RespawnHost affiliate/creator code. When set, every click on "Order Now" is reported to the affiliate system (`POST /api/affiliate/track/{code}`) before the checkout opens. Old configs with `partner_id` are migrated automatically.
 
 ## Repository layout
 

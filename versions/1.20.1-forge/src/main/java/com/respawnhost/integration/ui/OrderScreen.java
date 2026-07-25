@@ -152,7 +152,10 @@ public class OrderScreen extends Screen {
                 break;
             }
             Button orderButton = Button.builder(Component.translatable("screen.respawnhost_integration.order.order_now"),
-                            button -> Util.getPlatform().openUri(client.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang())))
+                            button -> {
+                                client.trackCreatorCode(RespawnConfig.get().creatorCode());
+                                Util.getPlatform().openUri(client.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang()));
+                            })
                     .bounds(buttonX, y, ORDER_BUTTON_WIDTH, 20)
                     .build();
             orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();

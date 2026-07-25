@@ -13,7 +13,7 @@ public class ConfigScreen extends GuiScreen {
     private static final int ID_BACK = 3;
 
     private final GuiScreen parent;
-    private GuiTextField partnerIdBox;
+    private GuiTextField creatorCodeBox;
     private GuiTextField packIdBox;
     private GuiButton showButtonToggle;
     private boolean showButton;
@@ -28,9 +28,9 @@ public class ConfigScreen extends GuiScreen {
         this.buttonList.clear();
         int centerX = this.width / 2;
 
-        partnerIdBox = new GuiTextField(0, this.fontRenderer, centerX - 100, 60, 200, 20);
-        partnerIdBox.setMaxStringLength(128);
-        partnerIdBox.setText(RespawnConfig.get().partnerId());
+        creatorCodeBox = new GuiTextField(0, this.fontRenderer, centerX - 100, 60, 200, 20);
+        creatorCodeBox.setMaxStringLength(128);
+        creatorCodeBox.setText(RespawnConfig.get().creatorCode());
 
         packIdBox = new GuiTextField(1, this.fontRenderer, centerX - 100, 110, 200, 20);
         packIdBox.setMaxStringLength(128);
@@ -62,7 +62,7 @@ public class ConfigScreen extends GuiScreen {
                 break;
             case ID_SAVE:
                 RespawnConfig config = RespawnConfig.get();
-                config.partnerId(partnerIdBox.getText().trim());
+                config.creatorCode(creatorCodeBox.getText().trim());
                 config.packId(packIdBox.getText().trim());
                 config.showOrderButton(showButton);
                 config.save();
@@ -78,7 +78,7 @@ public class ConfigScreen extends GuiScreen {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
-        if (partnerIdBox.textboxKeyTyped(typedChar, keyCode)) {
+        if (creatorCodeBox.textboxKeyTyped(typedChar, keyCode)) {
             return;
         }
         if (packIdBox.textboxKeyTyped(typedChar, keyCode)) {
@@ -96,13 +96,13 @@ public class ConfigScreen extends GuiScreen {
             super.mouseClicked(mouseX, mouseY, mouseButton);
         } catch (java.io.IOException ignored) {
         }
-        partnerIdBox.mouseClicked(mouseX, mouseY, mouseButton);
+        creatorCodeBox.mouseClicked(mouseX, mouseY, mouseButton);
         packIdBox.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override
     public void updateScreen() {
-        partnerIdBox.updateCursorCounter();
+        creatorCodeBox.updateCursorCounter();
         packIdBox.updateCursorCounter();
     }
 
@@ -110,11 +110,11 @@ public class ConfigScreen extends GuiScreen {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
         drawCenteredString(this.fontRenderer, I18n.format(LangKeys.CONFIG_TITLE), this.width / 2, 10, 0xFFFFFF);
-        drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_PARTNER_ID),
+        drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         drawString(this.fontRenderer, I18n.format(LangKeys.CONFIG_PACK_ID),
                 this.width / 2 - 100, 98, 0xAAAAAA);
-        partnerIdBox.drawTextBox();
+        creatorCodeBox.drawTextBox();
         packIdBox.drawTextBox();
         super.drawScreen(mouseX, mouseY, partialTicks);
     }

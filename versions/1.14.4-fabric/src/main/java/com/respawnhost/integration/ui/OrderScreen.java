@@ -168,7 +168,10 @@ public class OrderScreen extends Screen {
             }
             ButtonWidget orderButton = new ButtonWidget(buttonX, y, ORDER_BUTTON_WIDTH, 20,
                     I18n.translate(LangKeys.ORDER_ORDER_NOW),
-                    button -> openUri(apiClient.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang())));
+                    button -> {
+                        apiClient.trackCreatorCode(RespawnConfig.get().creatorCode());
+                        openUri(apiClient.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang()));
+                    });
             orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
             addButton(orderButton);
             y += ROW_HEIGHT;

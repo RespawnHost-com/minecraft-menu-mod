@@ -165,8 +165,11 @@ public class OrderScreen extends Screen {
             }
             Button orderButton = this.addButton(new Button(buttonX, y, ORDER_BUTTON_WIDTH, 20,
                     new TranslationTextComponent(LangKeys.ORDER_ORDER_NOW),
-                    button -> BrowserUtil.open(client.buildOrderUrl(plan, hourlySelected, termDaysSelected,
-                            regionSelected, uiLang()))));
+                    button -> {
+                        client.trackCreatorCode(RespawnConfig.get().creatorCode());
+                        BrowserUtil.open(client.buildOrderUrl(plan, hourlySelected, termDaysSelected,
+                                regionSelected, uiLang()));
+                    }));
             orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
             orderButtons.add(orderButton);
             y += ROW_HEIGHT;

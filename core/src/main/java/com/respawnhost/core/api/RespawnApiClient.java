@@ -104,6 +104,15 @@ public final class RespawnApiClient {
                 });
     }
 
+    public void trackCreatorCode(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return;
+        }
+        final String url = apiBaseUrl + "/affiliate/track/" + encode(code.trim());
+        CompletableFuture.runAsync(() -> post(url,
+                "{\"utm_source\":\"minecraft-mod\",\"utm_medium\":\"ingame\",\"utm_campaign\":\"respawnhost_integration\"}"), EXECUTOR);
+    }
+
     public String buildOrderUrl(ServerPlan plan, boolean hourly, int termDays, String region, String lang) {
         StringBuilder url = new StringBuilder(panelBaseUrl)
                 .append('/').append(encode(lang))
@@ -148,6 +157,29 @@ public final class RespawnApiClient {
         } catch (IOException e) {
             LOGGER.warning("Request to " + url + " failed: " + e);
             return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    private static void post(String url, String jsonBody) {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) new URL(url).openConnection();
+            connection.setConnectTimeout(TIMEOUT_MS);
+            connection.setReadTimeout(TIMEOUT_MS);
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            connection.getOutputStream().write(jsonBody.getBytes(StandardCharsets.UTF_8));
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                LOGGER.warning("POST to " + url + " returned HTTP " + status);
+            }
+        } catch (IOException e) {
+            LOGGER.warning("POST to " + url + " failed: " + e);
         } finally {
             if (connection != null) {
                 connection.disconnect();

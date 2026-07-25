@@ -10,7 +10,7 @@ import net.minecraft.text.TranslatableText;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private TextFieldWidget partnerIdBox;
+    private TextFieldWidget creatorCodeBox;
     private TextFieldWidget packIdBox;
     private boolean showButtonValue;
 
@@ -24,11 +24,11 @@ public class ConfigScreen extends Screen {
         RespawnConfig config = RespawnConfig.get();
         int centerX = this.width / 2;
 
-        partnerIdBox = new TextFieldWidget(this.font, centerX - 100, 60, 200, 20,
-                I18n.translate(LangKeys.CONFIG_PARTNER_ID));
-        partnerIdBox.setMaxLength(128);
-        partnerIdBox.setText(config.partnerId());
-        this.children.add(partnerIdBox);
+        creatorCodeBox = new TextFieldWidget(this.font, centerX - 100, 60, 200, 20,
+                I18n.translate(LangKeys.CONFIG_CREATOR_CODE));
+        creatorCodeBox.setMaxLength(128);
+        creatorCodeBox.setText(config.creatorCode());
+        this.children.add(creatorCodeBox);
 
         packIdBox = new TextFieldWidget(this.font, centerX - 100, 110, 200, 20,
                 I18n.translate(LangKeys.CONFIG_PACK_ID));
@@ -48,7 +48,7 @@ public class ConfigScreen extends Screen {
         addButton(new ButtonWidget(centerX - 100, this.height - 28, 200, 20,
                 I18n.translate(LangKeys.CONFIG_SAVE), button -> {
             RespawnConfig cfg = RespawnConfig.get();
-            cfg.partnerId(partnerIdBox.getText().trim());
+            cfg.creatorCode(creatorCodeBox.getText().trim());
             cfg.packId(packIdBox.getText().trim());
             cfg.showOrderButton(showButtonValue);
             cfg.save();
@@ -64,7 +64,7 @@ public class ConfigScreen extends Screen {
 
     @Override
     public void tick() {
-        partnerIdBox.tick();
+        creatorCodeBox.tick();
         packIdBox.tick();
     }
 
@@ -73,12 +73,12 @@ public class ConfigScreen extends Screen {
         super.render(mouseX, mouseY, delta);
         drawCenteredString(this.font, I18n.translate(LangKeys.CONFIG_TITLE), this.width / 2, 10, 0xFFFFFF);
         drawString(this.font,
-                I18n.translate(LangKeys.CONFIG_PARTNER_ID),
+                I18n.translate(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         drawString(this.font,
                 I18n.translate(LangKeys.CONFIG_PACK_ID),
                 this.width / 2 - 100, 98, 0xAAAAAA);
-        partnerIdBox.render(mouseX, mouseY, delta);
+        creatorCodeBox.render(mouseX, mouseY, delta);
         packIdBox.render(mouseX, mouseY, delta);
     }
 

@@ -180,8 +180,11 @@ public class OrderScreen extends GuiScreen {
             final ServerPlan plan = current.get(i);
             RunnableButton orderButton = new RunnableButton(ID_ORDER_BASE + i, buttonX, y, ORDER_BUTTON_WIDTH, 20,
                     I18n.format(LangKeys.ORDER_ORDER_NOW),
-                    () -> BrowserUtil.open(client.buildOrderUrl(plan, hourlySelected,
-                            TERM_OPTIONS[termIndex], regionSelected, uiLang())));
+                    () -> {
+                        client.trackCreatorCode(RespawnConfig.get().creatorCode());
+                        BrowserUtil.open(client.buildOrderUrl(plan, hourlySelected,
+                                TERM_OPTIONS[termIndex], regionSelected, uiLang()));
+                    });
             orderButton.enabled = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
             addButton(orderButton);
             y += ROW_HEIGHT;

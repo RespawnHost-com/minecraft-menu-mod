@@ -12,7 +12,7 @@ import net.minecraft.text.TranslatableText;
 
 public class ConfigScreen extends Screen {
     private final Screen parent;
-    private TextFieldWidget partnerIdBox;
+    private TextFieldWidget creatorCodeBox;
     private TextFieldWidget packIdBox;
     private boolean showButtonValue;
 
@@ -26,11 +26,11 @@ public class ConfigScreen extends Screen {
         RespawnConfig config = RespawnConfig.get();
         int centerX = this.width / 2;
 
-        partnerIdBox = new TextFieldWidget(this.textRenderer, centerX - 100, 60, 200, 20,
-                new TranslatableText(LangKeys.CONFIG_PARTNER_ID));
-        partnerIdBox.setMaxLength(128);
-        partnerIdBox.setText(config.partnerId());
-        addDrawableChild(partnerIdBox);
+        creatorCodeBox = new TextFieldWidget(this.textRenderer, centerX - 100, 60, 200, 20,
+                new TranslatableText(LangKeys.CONFIG_CREATOR_CODE));
+        creatorCodeBox.setMaxLength(128);
+        creatorCodeBox.setText(config.creatorCode());
+        addDrawableChild(creatorCodeBox);
 
         packIdBox = new TextFieldWidget(this.textRenderer, centerX - 100, 110, 200, 20,
                 new TranslatableText(LangKeys.CONFIG_PACK_ID));
@@ -50,7 +50,7 @@ public class ConfigScreen extends Screen {
         addDrawableChild(new ButtonWidget(centerX - 100, this.height - 28, 200, 20,
                 new TranslatableText(LangKeys.CONFIG_SAVE), button -> {
             RespawnConfig cfg = RespawnConfig.get();
-            cfg.partnerId(partnerIdBox.getText().trim());
+            cfg.creatorCode(creatorCodeBox.getText().trim());
             cfg.packId(packIdBox.getText().trim());
             cfg.showOrderButton(showButtonValue);
             cfg.save();
@@ -69,7 +69,7 @@ public class ConfigScreen extends Screen {
         super.render(matrices, mouseX, mouseY, delta);
         drawCenteredText(matrices, this.textRenderer, this.title, this.width / 2, 10, 0xFFFFFF);
         drawTextWithShadow(matrices, this.textRenderer,
-                new TranslatableText(LangKeys.CONFIG_PARTNER_ID),
+                new TranslatableText(LangKeys.CONFIG_CREATOR_CODE),
                 this.width / 2 - 100, 48, 0xAAAAAA);
         drawTextWithShadow(matrices, this.textRenderer,
                 new TranslatableText(LangKeys.CONFIG_PACK_ID),

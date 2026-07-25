@@ -20,7 +20,7 @@ public final class LangKeys {
     public static final String ORDER_BACK = "screen.respawnhost_integration.order.back";
     public static final String ORDER_CHECKOUT_HINT = "screen.respawnhost_integration.order.checkout_hint";
     public static final String CONFIG_TITLE = "screen.respawnhost_integration.config.title";
-    public static final String CONFIG_PARTNER_ID = "screen.respawnhost_integration.config.partner_id";
+    public static final String CONFIG_CREATOR_CODE = "screen.respawnhost_integration.config.creator_code";
     public static final String CONFIG_PACK_ID = "screen.respawnhost_integration.config.pack_id";
     public static final String CONFIG_SHOW_BUTTON = "screen.respawnhost_integration.config.show_button";
     public static final String CONFIG_SAVE = "screen.respawnhost_integration.config.save";
