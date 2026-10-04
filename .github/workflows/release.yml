@@ -40,6 +40,8 @@ jobs:
   deploy:
     needs: [prepare, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -66,7 +68,29 @@ jobs:
           else
             git log --pretty=format:'- %s' -n 20 HEAD > changelog.txt
           fi
-      - name: Publish
+      - name: Publish GitHub release
+        if: github.event_name == 'push' || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MOD_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          tag="v$MOD_VERSION"
+          if gh release view "$tag" --json isDraft > release-state.json 2>/dev/null; then
+            if ! python -c 'import json,sys; sys.exit(0 if json.load(open("release-state.json"))["isDraft"] else 1)'; then
+              echo "Release $tag is already published; refusing to replace its assets."
+              exit 1
+            fi
+          else
+            gh release create "$tag" --target "$GITHUB_SHA" --draft --title "$tag" --notes-file changelog.txt
+          fi
+          mapfile -d '' jars < <(find artifacts -type f -name '*.jar' -print0)
+          gh release upload "$tag" "${jars[@]}" --clobber
+          if [[ "$MOD_VERSION" =~ (alpha|beta|rc) ]]; then
+            gh release edit "$tag" --draft=false --prerelease
+          else
+            gh release edit "$tag" --draft=false --latest
+          fi
+      - name: Publish to CurseForge and Modrinth
         if: github.event_name == 'push' || inputs.publish
         env:
           MOD_VERSION: ${{ needs.prepare.outputs.version }}

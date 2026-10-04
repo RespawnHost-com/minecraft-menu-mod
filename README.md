@@ -82,7 +82,9 @@ are not published.
 
 Branch pushes and pull requests only build and test. They do **not** publish.
 Pushing a tag such as `v1.1.0` runs the reusable build workflow for **all** matrix entries,
-validates the complete artifact set, then publishes to CurseForge and Modrinth.
+validates the complete artifact set, creates a GitHub release with all 35 production jars,
+then publishes to CurseForge and Modrinth. The GitHub release remains available if an external
+platform rejects an upload. Published GitHub release assets are never overwritten by a rerun.
 Tags containing `alpha`, `beta` or `rc` select the corresponding release type.
 
 The **Release** workflow can also be started manually with a version. Its default
