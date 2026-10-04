@@ -17,3 +17,6 @@ logs/
 *.log
 
 build.pid
+dist/
+.verification/
+__pycache__/

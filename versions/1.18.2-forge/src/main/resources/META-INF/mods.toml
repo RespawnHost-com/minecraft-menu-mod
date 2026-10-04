@@ -5,7 +5,7 @@ displayTest="IGNORE_ALL_VERSION"
 
 [[mods]]
 modId="respawnhost_integration"
-version="1.0.0"
+version="${version}"
 displayName="RespawnHost Integration Menu"
 description='''Order and configure RespawnHost servers directly from the multiplayer menu.'''
 authors="RespawnHost"
