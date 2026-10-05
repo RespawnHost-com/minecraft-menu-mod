@@ -17,6 +17,9 @@ public final class ServerPlan {
     private boolean availableFixed;
     private List<FixedTerm> fixedTerms;
     private Map<String, PriceOverride> priceOverrides;
+    /** Eco tier prices; null when the plan has no Eco tier. */
+    private Double priceHourlyEco;
+    private Double priceMonthlyEco;
 
     public ServerPlan() {
     }
@@ -90,6 +93,19 @@ public final class ServerPlan {
 
     public Map<String, PriceOverride> getPriceOverrides() {
         return priceOverrides;
+    }
+
+    public Double getPriceHourlyEco() {
+        return priceHourlyEco;
+    }
+
+    public Double getPriceMonthlyEco() {
+        return priceMonthlyEco;
+    }
+
+    // ponytail: plans are named after their RAM tier; the API name ("minecraft-3") is internal.
+    public String displayName() {
+        return "Minecraft " + ramDisplay();
     }
 
     public String ramDisplay() {

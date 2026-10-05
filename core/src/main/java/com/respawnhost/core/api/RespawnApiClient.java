@@ -1,7 +1,9 @@
 package com.respawnhost.core.api;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import com.respawnhost.core.model.CurrencyInfo;
 import com.respawnhost.core.model.ModpackInfo;
 import com.respawnhost.core.model.ServerPlan;
 
@@ -16,15 +18,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 public final class RespawnApiClient {
     private static final Logger LOGGER = Logger.getLogger(RespawnApiClient.class.getName());
     private static final Gson GSON = new Gson();
     private static final Type PLAN_LIST_TYPE = new TypeToken<List<ServerPlan>>() {
+    }.getType();
+    private static final Type CURRENCY_LIST_TYPE = new TypeToken<List<CurrencyInfo>>() {
     }.getType();
     private static final int TIMEOUT_MS = 10000;
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool(runnable -> {
@@ -44,64 +50,62 @@ public final class RespawnApiClient {
     }
 
     public CompletableFuture<List<ServerPlan>> fetchPlans() {
-        final String url;
-        try {
-            url = apiBaseUrl + "/games/short/" + encode(gameShort) + "/packages";
-            new URL(url);
-        } catch (RuntimeException | java.net.MalformedURLException e) {
-            LOGGER.warning("Invalid plans URL, using fallback plans: " + e);
-            return CompletableFuture.completedFuture(FallbackPlans.get());
-        }
-        return CompletableFuture.supplyAsync(() -> get(url), EXECUTOR)
-                .thenApply(body -> {
-                    if (body == null) {
-                        return FallbackPlans.get();
-                    }
-                    try {
-                        List<ServerPlan> plans = GSON.fromJson(body, PLAN_LIST_TYPE);
-                        if (plans == null || plans.isEmpty()) {
-                            LOGGER.warning("Plans response was empty, using fallback plans");
-                            return FallbackPlans.get();
-                        }
-                        return Collections.unmodifiableList(new ArrayList<>(plans));
-                    } catch (RuntimeException e) {
-                        LOGGER.warning("Failed to parse plans response, using fallback plans: " + e);
-                        return FallbackPlans.get();
-                    }
-                })
-                .exceptionally(throwable -> {
-                    LOGGER.warning("Failed to fetch plans, using fallback plans: " + throwable);
-                    return FallbackPlans.get();
-                });
+        return getJson("/games/short/" + encode(gameShort) + "/packages", FallbackPlans.get(), body -> {
+            List<ServerPlan> plans = GSON.fromJson(body, PLAN_LIST_TYPE);
+            return plans == null || plans.isEmpty()
+                    ? FallbackPlans.get()
+                    : Collections.unmodifiableList(new ArrayList<>(plans));
+        });
     }
 
     public CompletableFuture<ModpackInfo> fetchModpackInfo(String slug) {
         final ModpackInfo fallback = new ModpackInfo(slug, slug, null, null, null, null);
-        final String url;
-        try {
-            url = apiBaseUrl + "/modpacks/" + encode(slug);
-            new URL(url);
-        } catch (RuntimeException | java.net.MalformedURLException e) {
-            LOGGER.warning("Invalid modpack info URL: " + e);
-            return CompletableFuture.completedFuture(fallback);
+        return getJson("/modpacks/" + encode(slug), fallback, body -> {
+            ModpackInfo info = GSON.fromJson(body, ModpackInfo.class);
+            return info != null ? info : fallback;
+        });
+    }
+
+    /**
+     * Display currency: the configured ISO code, otherwise the visitor's currency
+     * from GeoIP, otherwise EUR.
+     */
+    public CompletableFuture<CurrencyInfo> fetchCurrency(String preferredCode) {
+        CompletableFuture<String> code = preferredCode != null && !preferredCode.trim().isEmpty()
+                ? CompletableFuture.completedFuture(preferredCode.trim().toUpperCase(Locale.ROOT))
+                : getJson("/geo/currency", "EUR", body -> GSON.fromJson(body, JsonObject.class)
+                        .getAsJsonObject("currency").get("code").getAsString());
+        CompletableFuture<List<CurrencyInfo>> all = getJson("/currencies",
+                Collections.<CurrencyInfo>emptyList(), body -> GSON.fromJson(body, CURRENCY_LIST_TYPE));
+        return code.thenCombine(all, (wanted, currencies) -> {
+            for (CurrencyInfo currency : currencies) {
+                if (currency.getCode().equalsIgnoreCase(wanted)) {
+                    return currency;
+                }
+            }
+            return CurrencyInfo.EUR;
+        });
+    }
+
+    /** Whether an Eco node is free in the region. Unknown counts as unavailable, like the panel. */
+    public CompletableFuture<Boolean> fetchEcoAvailable(String region) {
+        return getJson("/capacity/" + encode(region) + "/tiers", Boolean.FALSE, body -> {
+            JsonObject json = GSON.fromJson(body, JsonObject.class);
+            return json.has("eco") && json.get("eco").getAsBoolean();
+        });
+    }
+
+    /** Prepaid/subscription discount of a creator code as a fraction (0.2 = 20 %), 0 if unknown. */
+    public CompletableFuture<Double> fetchCreatorDiscount(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(0.0);
         }
-        return CompletableFuture.supplyAsync(() -> get(url), EXECUTOR)
-                .thenApply(body -> {
-                    if (body == null) {
-                        return fallback;
-                    }
-                    try {
-                        ModpackInfo info = GSON.fromJson(body, ModpackInfo.class);
-                        return info != null ? info : fallback;
-                    } catch (RuntimeException e) {
-                        LOGGER.warning("Failed to parse modpack info for '" + slug + "': " + e);
-                        return fallback;
-                    }
-                })
-                .exceptionally(throwable -> {
-                    LOGGER.warning("Failed to fetch modpack info for '" + slug + "': " + throwable);
-                    return fallback;
-                });
+        return getJson("/affiliate/validate/" + encode(code.trim()), 0.0, body -> {
+            JsonObject affiliate = GSON.fromJson(body, JsonObject.class).getAsJsonObject("affiliate");
+            return affiliate != null && affiliate.has("fixed_discount_percent")
+                    ? affiliate.get("fixed_discount_percent").getAsDouble()
+                    : 0.0;
+        });
     }
 
     public void trackCreatorCode(String code) {
@@ -113,20 +117,48 @@ public final class RespawnApiClient {
                 "{\"utm_source\":\"minecraft-mod\",\"utm_medium\":\"ingame\",\"utm_campaign\":\"respawnhost_integration\"}"), EXECUTOR);
     }
 
-    public String buildOrderUrl(ServerPlan plan, boolean hourly, int termDays, String region, String lang) {
+    /**
+     * Deep link into the panel checkout. The panel reads plan, model, term, region,
+     * performance_tier and ref (creator code) from the query.
+     */
+    public String buildOrderUrl(ServerPlan plan, String model, int termDays, String region, boolean eco,
+            String creatorCode, String lang) {
         StringBuilder url = new StringBuilder(panelBaseUrl)
                 .append('/').append(encode(lang))
                 .append("/order/").append(encode(gameShort))
-                .append("?plan=").append(plan.getId());
-        if (hourly) {
-            url.append("&model=hourly");
-        } else {
-            url.append("&model=fixed&term=").append(termDays);
+                .append("?plan=").append(plan.getId())
+                .append("&model=").append(encode(model));
+        if ("fixed".equals(model)) {
+            url.append("&term=").append(termDays);
         }
         if (region != null && !region.trim().isEmpty()) {
             url.append("&region=").append(encode(region));
         }
+        url.append("&performance_tier=").append(eco ? "eco" : "performance");
+        if (creatorCode != null && !creatorCode.trim().isEmpty()) {
+            url.append("&ref=").append(encode(creatorCode.trim()));
+        }
         return url.toString();
+    }
+
+    private <T> CompletableFuture<T> getJson(String path, final T fallback, final Function<String, T> parse) {
+        final String url = apiBaseUrl + path;
+        return CompletableFuture.supplyAsync(() -> get(url), EXECUTOR)
+                .thenApply(body -> {
+                    if (body == null) {
+                        return fallback;
+                    }
+                    try {
+                        return parse.apply(body);
+                    } catch (RuntimeException e) {
+                        LOGGER.warning("Failed to parse response of " + url + ": " + e);
+                        return fallback;
+                    }
+                })
+                .exceptionally(throwable -> {
+                    LOGGER.warning("Request to " + url + " failed: " + throwable);
+                    return fallback;
+                });
     }
 
     private static String get(String url) {

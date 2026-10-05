@@ -4,12 +4,12 @@ public final class FixedTerm {
     private int termDays;
     private double price;
     private double effectiveMonthly;
-    private int discountPercent;
+    private double discountPercent;
 
     public FixedTerm() {
     }
 
-    public FixedTerm(int termDays, double price, double effectiveMonthly, int discountPercent) {
+    public FixedTerm(int termDays, double price, double effectiveMonthly, double discountPercent) {
         this.termDays = termDays;
         this.price = price;
         this.effectiveMonthly = effectiveMonthly;
@@ -28,7 +28,7 @@ public final class FixedTerm {
         return effectiveMonthly;
     }
 
-    public int getDiscountPercent() {
+    public double getDiscountPercent() {
         return discountPercent;
     }
 }

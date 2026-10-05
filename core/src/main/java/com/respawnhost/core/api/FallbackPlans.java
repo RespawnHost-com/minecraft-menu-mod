@@ -17,10 +17,13 @@ public final class FallbackPlans {
 
     static {
         List<ServerPlan> plans = new ArrayList<>();
-        plans.add(new ServerPlan(1, "2 GB", 2048, 100, 10240, 0.0055, 1.99, 10, false, true, true, fixedTerms(1.99), null));
-        plans.add(new ServerPlan(2, "4 GB", 4096, 200, 20480, 0.0082, 2.99, 20, true, true, true, fixedTerms(2.99), null));
-        plans.add(new ServerPlan(3, "8 GB", 8192, 300, 40960, 0.0164, 5.99, 40, false, true, true, fixedTerms(5.99), null));
-        plans.add(new ServerPlan(4, "16 GB", 16384, 400, 81920, 0.0328, 11.99, 80, false, true, true, fixedTerms(11.99), null));
+        // ponytail: snapshot of the live Minecraft plans (performance tier, EUR) from 2026-10-05.
+        plans.add(new ServerPlan(252, "minecraft-2", 4096, 0, 0, 0.02961249, 8.00, 10, false, true, true, fixedTerms(8.00), null));
+        plans.add(new ServerPlan(1116, "minecraft-6gb", 6144, 0, 0, 0.0427, 11.39, 20, false, true, true, fixedTerms(11.39), null));
+        plans.add(new ServerPlan(253, "minecraft-3", 8192, 0, 0, 0.05749998, 15.20, 30, true, true, true, fixedTerms(15.20), null));
+        plans.add(new ServerPlan(254, "minecraft-4", 12288, 0, 0, 0.084525, 21.60, 50, false, true, true, fixedTerms(21.60), null));
+        plans.add(new ServerPlan(255, "minecraft-5", 16384, 0, 0, 0.10924998, 27.20, 80, false, true, true, fixedTerms(27.20), null));
+        plans.add(new ServerPlan(256, "minecraft-6", 32768, 0, 0, 0.207, 48.00, 150, false, true, true, fixedTerms(48.00), null));
         PLANS = Collections.unmodifiableList(plans);
     }
 

@@ -75,6 +75,10 @@ public final class RespawnConfig {
         data.setRegion(region);
     }
 
+    public String getCurrency() {
+        return data.getCurrency();
+    }
+
     public boolean isShowOrderButton() {
         return data.isShowOrderButton();
     }

@@ -1,88 +1,48 @@
 package com.respawnhost.integration.forge.ui;
 
 import com.respawnhost.core.LangKeys;
-import com.respawnhost.core.api.FallbackPlans;
-import com.respawnhost.core.api.RespawnApiClient;
-import com.respawnhost.core.model.FixedTerm;
 import com.respawnhost.core.model.ModpackInfo;
 import com.respawnhost.core.model.ServerPlan;
+import com.respawnhost.core.order.OrderSession;
 import com.respawnhost.core.recommend.PlanRecommender;
 import com.respawnhost.integration.forge.config.RespawnConfig;
 import com.respawnhost.integration.forge.modpack.ModpackDetector;
+import net.minecraftforge.fml.ModList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.fml.ModList;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 
 public class OrderScreen extends Screen {
     private static final int ROW_HEIGHT = 30;
     private static final int LIST_LEFT_MARGIN = 40;
     private static final int ORDER_BUTTON_WIDTH = 110;
-    private static final List<Integer> TERM_OPTIONS = Arrays.asList(30, 90, 180, 360);
-    private static final List<String> REGION_OPTIONS = Arrays.asList("eu", "us");
 
     private final Screen parent;
-    private final RespawnApiClient client;
+    private final OrderSession session;
     private final String modpackSlug;
-    private volatile List<ServerPlan> plans;
-    private volatile ModpackInfo modpackInfo;
-    private volatile boolean offline;
-    private boolean hourlySelected;
-    private int termDaysSelected = 30;
-    private String regionSelected;
     private ServerPlan recommended;
     private int listTop;
-    private Button termButton;
-    private final List<Button> orderButtons = new ArrayList<>();
 
     public OrderScreen(Screen parent) {
         super(new TranslationTextComponent(LangKeys.ORDER_TITLE));
         this.parent = parent;
         RespawnConfig config = RespawnConfig.get();
-        this.client = new RespawnApiClient(config.getApiBaseUrl(), config.getGameShort(), config.getPanelBaseUrl());
         this.modpackSlug = ModpackDetector.detectModpackName();
-        String configRegion = config.getRegion();
-        this.regionSelected = configRegion != null && REGION_OPTIONS.contains(configRegion.toLowerCase(Locale.ROOT))
-                ? configRegion.toLowerCase(Locale.ROOT)
-                : "eu";
-
-        CompletableFuture<List<ServerPlan>> plansFuture = client.fetchPlans();
-        CompletableFuture<ModpackInfo> infoFuture = modpackSlug != null ? client.fetchModpackInfo(modpackSlug) : null;
-        CompletableFuture<Void> done = infoFuture != null
-                ? CompletableFuture.allOf(plansFuture, infoFuture)
-                : plansFuture.thenAccept(ignored -> {
-                });
-        done.thenRun(() -> {
-            this.plans = plansFuture.join();
-            this.modpackInfo = infoFuture != null ? infoFuture.join() : null;
-            this.offline = isFallbackContent(this.plans);
-            Minecraft.getInstance().execute(() -> {
-                if (Minecraft.getInstance().screen == this && this.minecraft != null) {
-                    this.init(this.minecraft, this.width, this.height);
-                }
-            });
-        });
+        this.session = new OrderSession(config.getApiBaseUrl(), config.getPanelBaseUrl(), config.getGameShort(),
+                config.getRegion(), config.getCurrency(), config.creatorCode(), modpackSlug);
+        session.load().thenRun(() -> Minecraft.getInstance().execute(() -> {
+            if (Minecraft.getInstance().screen == this && this.minecraft != null) {
+                rebuild();
+            }
+        }));
     }
 
-    private static boolean isFallbackContent(List<ServerPlan> list) {
-        List<ServerPlan> fallback = FallbackPlans.get();
-        if (list.size() != fallback.size()) {
-            return false;
-        }
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getId() != fallback.get(i).getId()) {
-                return false;
-            }
-        }
-        return true;
+    private void rebuild() {
+        this.init(this.minecraft, this.width, this.height);
     }
 
     private static String uiLang() {
@@ -98,23 +58,26 @@ public class OrderScreen extends Screen {
         }
     }
 
-    private static String billingLabel(boolean hourly) {
-        return I18n.get(hourly ? LangKeys.ORDER_MODEL_HOURLY : LangKeys.ORDER_MODEL_FIXED);
+    private static String tr(String key, Object... args) {
+        return I18n.get(key, args);
+    }
+
+    private static <T> T next(List<T> values, T current) {
+        return values.get((values.indexOf(current) + 1) % values.size());
     }
 
     private String termLabel() {
-        return I18n.get(LangKeys.ORDER_TERM_DAYS, termDaysSelected);
+        return tr(LangKeys.ORDER_TERM_DAYS, session.termDays());
     }
 
     private String regionLabel() {
-        return I18n.get(LangKeys.ORDER_REGION, regionSelected.toUpperCase(Locale.ROOT));
+        return tr(LangKeys.ORDER_REGION, OrderSession.regionLabel(session.region()));
     }
 
     @Override
     protected void init() {
         boolean showModpackLine = modpackSlug != null;
         listTop = showModpackLine ? 78 : 66;
-        orderButtons.clear();
 
         int controlY = 26;
         int controlWidth = 100;
@@ -122,40 +85,37 @@ public class OrderScreen extends Screen {
         int controlsTotal = controlWidth * 3 + controlGap * 2;
         int controlX = this.width / 2 - controlsTotal / 2;
 
-        Button billingButton = new Button(controlX, controlY, controlWidth, 20, billingLabel(hourlySelected), button -> {
-            this.hourlySelected = !this.hourlySelected;
-            button.setMessage(billingLabel(this.hourlySelected));
-            this.termButton.active = !this.hourlySelected;
-            updateOrderButtonStates();
-        });
-        this.addButton(billingButton);
+        this.addButton(new Button(controlX, controlY, controlWidth, 20,
+                tr(OrderSession.modelKey(session.model())), button -> {
+            session.model(next(OrderSession.MODELS, session.model()));
+            rebuild();
+        }));
 
-        this.termButton = new Button(controlX + controlWidth + controlGap, controlY, controlWidth, 20,
-                termLabel(), button -> {
-            int index = TERM_OPTIONS.indexOf(this.termDaysSelected);
-            this.termDaysSelected = TERM_OPTIONS.get((index + 1) % TERM_OPTIONS.size());
+        Button termButton = new Button(controlX + controlWidth + controlGap, controlY,
+                controlWidth, 20, termLabel(), button -> {
+            session.termDays(next(OrderSession.TERMS, session.termDays()));
             button.setMessage(termLabel());
         });
-        this.termButton.active = !this.hourlySelected;
-        this.addButton(this.termButton);
+        termButton.active = session.termSelectable();
+        this.addButton(termButton);
 
         this.addButton(new Button(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth, 20,
                 regionLabel(), button -> {
-            int index = REGION_OPTIONS.indexOf(this.regionSelected);
-            this.regionSelected = REGION_OPTIONS.get((index + 1) % REGION_OPTIONS.size());
+            session.region(next(OrderSession.REGIONS, session.region()));
             button.setMessage(regionLabel());
         }));
 
         this.addButton(new Button(this.width / 2 - 102, this.height - 28, 99, 20,
-                I18n.get(LangKeys.ORDER_BACK), button -> onClose()));
+                tr(LangKeys.ORDER_BACK), button -> onClose()));
         this.addButton(new Button(this.width / 2 + 3, this.height - 28, 99, 20,
-                I18n.get(LangKeys.CONFIG_TITLE),
+                tr(LangKeys.CONFIG_TITLE),
                 button -> Minecraft.getInstance().setScreen(new ConfigScreen(this))));
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null || current.isEmpty()) {
             return;
         }
+        ModpackInfo modpackInfo = session.modpackInfo();
         recommended = PlanRecommender.recommend(current,
                 modpackInfo != null ? modpackInfo.getRecommendedRamMb() : null, loadedModCount());
         int y = listTop;
@@ -165,27 +125,14 @@ public class OrderScreen extends Screen {
                 break;
             }
             Button orderButton = new Button(buttonX, y, ORDER_BUTTON_WIDTH, 20,
-                    I18n.get(LangKeys.ORDER_ORDER_NOW),
+                    tr(LangKeys.ORDER_ORDER_NOW),
                     button -> {
-                        client.trackCreatorCode(RespawnConfig.get().creatorCode());
-                        BrowserUtil.open(client.buildOrderUrl(plan, hourlySelected, termDaysSelected,
-                                regionSelected, uiLang()));
+                        session.trackOrderClick();
+                        BrowserUtil.open(session.orderUrl(plan, uiLang()));
                     });
-            orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
+            orderButton.active = session.orderable(plan);
             this.addButton(orderButton);
-            orderButtons.add(orderButton);
             y += ROW_HEIGHT;
-        }
-    }
-
-    private void updateOrderButtonStates() {
-        List<ServerPlan> current = plans;
-        if (current == null) {
-            return;
-        }
-        for (int i = 0; i < orderButtons.size() && i < current.size(); i++) {
-            ServerPlan plan = current.get(i);
-            orderButtons.get(i).active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
         }
     }
 
@@ -193,27 +140,29 @@ public class OrderScreen extends Screen {
     public void render(int mouseX, int mouseY, float partialTicks) {
         this.renderBackground();
         super.render(mouseX, mouseY, partialTicks);
-        drawCenteredString(this.font, I18n.get(LangKeys.ORDER_TITLE), this.width / 2, 10, 0xFFFFFF);
+        this.drawCenteredString(this.font, tr(LangKeys.ORDER_TITLE),
+                this.width / 2, 10, 0xFFFFFF);
 
+        ModpackInfo modpackInfo = session.modpackInfo();
         if (modpackSlug != null) {
             String displayName = modpackInfo != null && modpackInfo.getRecommendedRamMb() != null
                     ? modpackInfo.getName()
                     : modpackSlug;
-            drawCenteredString(this.font,
-                    I18n.get(LangKeys.ORDER_MODPACK_DETECTED, displayName),
+            this.drawCenteredString(this.font,
+                    tr(LangKeys.ORDER_MODPACK_DETECTED, displayName),
                     this.width / 2, 52, 0x55FF55);
         }
 
-        if (offline) {
-            drawCenteredString(this.font,
-                    I18n.get(LangKeys.ORDER_OFFLINE),
+        if (session.isOffline()) {
+            this.drawCenteredString(this.font,
+                    tr(LangKeys.ORDER_OFFLINE),
                     this.width / 2, modpackSlug != null ? 64 : 52, 0xFFAA00);
         }
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null) {
-            drawCenteredString(this.font,
-                    I18n.get(LangKeys.ORDER_LOADING),
+            this.drawCenteredString(this.font,
+                    tr(LangKeys.ORDER_LOADING),
                     this.width / 2, this.height / 2 - 4, 0xAAAAAA);
             return;
         }
@@ -224,33 +173,24 @@ public class OrderScreen extends Screen {
                 break;
             }
             String nameLine = plan == recommended
-                    ? plan.getName() + "  " + I18n.get(LangKeys.ORDER_RECOMMENDED)
-                    : plan.getName();
-            drawString(this.font, nameLine, LIST_LEFT_MARGIN, y, 0xFFFFFF);
+                    ? plan.displayName() + "  " + tr(LangKeys.ORDER_RECOMMENDED)
+                    : plan.displayName();
+            this.drawString(this.font, nameLine, LIST_LEFT_MARGIN, y, 0xFFFFFF);
 
-            StringBuilder details = new StringBuilder(I18n.get(LangKeys.ORDER_RAM, plan.ramDisplay()));
+            StringBuilder details = new StringBuilder();
             if (plan.slotsOrDefault() > 0) {
-                details.append("   ").append(I18n.get(LangKeys.ORDER_SLOTS, plan.slotsOrDefault()));
+                details.append(tr(LangKeys.ORDER_SLOTS, plan.slotsOrDefault())).append("   ");
             }
-            String price = hourlySelected
-                    ? I18n.get(LangKeys.ORDER_PRICE_HOURLY, plan.getPriceHourly(), "EUR")
-                    : I18n.get(LangKeys.ORDER_PRICE, plan.getPriceMonthly(), "EUR");
-            details.append("   ").append(price);
-            if (!hourlySelected && plan.getFixedTerms() != null) {
-                for (FixedTerm term : plan.getFixedTerms()) {
-                    if (term.getTermDays() == termDaysSelected && term.getDiscountPercent() > 0) {
-                        details.append("   ").append(I18n.get(LangKeys.ORDER_EFFECTIVE_MONTHLY,
-                                term.getEffectiveMonthly(), "EUR"));
-                        break;
-                    }
-                }
+            for (OrderSession.Line line : session.priceLines(plan, uiLang())) {
+                details.append(tr(line.key, line.args)).append("   ");
             }
-            drawString(this.font, details.toString(), LIST_LEFT_MARGIN, y + 12, 0xAAAAAA);
+            this.drawString(this.font, details.toString(),
+                    LIST_LEFT_MARGIN, y + 12, 0xAAAAAA);
             y += ROW_HEIGHT;
         }
 
-        drawCenteredString(this.font,
-                I18n.get(LangKeys.ORDER_CHECKOUT_HINT),
+        this.drawCenteredString(this.font,
+                tr(LangKeys.ORDER_CHECKOUT_HINT),
                 this.width / 2, this.height - 44, 0x777777);
     }
 

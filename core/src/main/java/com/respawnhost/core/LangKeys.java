@@ -7,11 +7,13 @@ public final class LangKeys {
     public static final String ORDER_OFFLINE = "screen.respawnhost_integration.order.offline";
     public static final String ORDER_RECOMMENDED = "screen.respawnhost_integration.order.recommended";
     public static final String ORDER_MODPACK_DETECTED = "screen.respawnhost_integration.order.modpack_detected";
-    public static final String ORDER_RAM = "screen.respawnhost_integration.order.ram";
     public static final String ORDER_SLOTS = "screen.respawnhost_integration.order.slots";
     public static final String ORDER_PRICE = "screen.respawnhost_integration.order.price";
     public static final String ORDER_PRICE_HOURLY = "screen.respawnhost_integration.order.price_hourly";
+    public static final String ORDER_PRICE_TERM = "screen.respawnhost_integration.order.price_term";
+    public static final String ORDER_FIRST_MONTH = "screen.respawnhost_integration.order.first_month";
     public static final String ORDER_EFFECTIVE_MONTHLY = "screen.respawnhost_integration.order.effective_monthly";
+    public static final String ORDER_MODEL_SUBSCRIPTION = "screen.respawnhost_integration.order.model_subscription";
     public static final String ORDER_MODEL_FIXED = "screen.respawnhost_integration.order.model_fixed";
     public static final String ORDER_MODEL_HOURLY = "screen.respawnhost_integration.order.model_hourly";
     public static final String ORDER_TERM_DAYS = "screen.respawnhost_integration.order.term_days";

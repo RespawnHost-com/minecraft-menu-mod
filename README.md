@@ -7,8 +7,11 @@ Order and configure [RespawnHost](https://respawnhost.com) servers directly from
 - **Order button in the multiplayer screen** — opens the order menu without leaving the game
 - **Live plan list** — fetched from the RespawnHost API (`/api/games/short/minecraft/packages`), with an offline fallback list when the API is unreachable
 - **Modpack-aware recommendations** — detects your modpack, reads its recommended RAM from the API and highlights the best-fitting plan
-- **Full order configuration in-game** — billing model (fixed term / hourly), term length (30/90/180/360 days with volume discounts) and region (EU/US)
-- **Deep-link checkout** — completes the order in your browser on `panel.respawnhost.com` with plan, model, term and region preselected (survives the login redirect)
+- **Full order configuration in-game** — billing model (subscription / prepaid / pay-per-use), term length for prepaid (30/90/180/360 days with term discounts) and region (EU, US West, US East, India)
+- **Cheapest price shown** — Eco tier whenever an Eco node is free in the selected region, otherwise Performance
+- **Multi-currency** — EUR, USD, INR (and whatever `/api/currencies` offers), using the maintained fixed prices per currency before exchange rates; detected from the player's location unless set in the config
+- **Creator codes** — with `creator_code` set, prices include the code's discount (read from `/api/affiliate/validate/{code}`) and the checkout link carries `ref=CODE`
+- **Deep-link checkout** — completes the order in your browser on `panel.respawnhost.com` with plan, model, term, region and hardware tier preselected (survives the login redirect)
 - **In-game config screen** — Partner ID, Modpack ID, toggle for the order button
 - **Localization** — English and German out of the box (English is the automatic fallback for all other languages)
 
@@ -42,11 +45,16 @@ Drop the jar matching your Minecraft version and loader into your `mods` folder.
   "panel_base_url": "https://panel.respawnhost.com",
   "game_short": "minecraft",
   "region": "eu",
+  "currency": "",
   "show_order_button": true
 }
 ```
 
-`creator_code` is your RespawnHost affiliate/creator code. When set, every click on "Order Now" is reported to the affiliate system (`POST /api/affiliate/track/{code}`) before the checkout opens. Old configs with `partner_id` are migrated automatically.
+All fields are optional.
+
+- `creator_code` — your RespawnHost creator code (`ref_code` and the old `partner_id` are accepted as aliases). Prices in the menu include the code's discount, the checkout opens with `ref=CODE`, and every click on "Order Now" is reported to the affiliate system (`POST /api/affiliate/track/{code}`). The discount itself is maintained on the RespawnHost side, so the menu never shows a price the checkout would not grant. Like in the checkout, discounts do not stack: the larger of term discount and creator discount wins; for subscriptions it applies to the first month; pay-per-use has no discount.
+- `region` — preselected region: `eu`, `us` (US West), `clt` (US East) or `in` (India).
+- `currency` — `EUR`, `USD`, `INR`; empty = detect from the player's location.
 
 ## Repository layout
 

@@ -1,11 +1,9 @@
 package com.respawnhost.integration.ui;
 
 import com.respawnhost.core.LangKeys;
-import com.respawnhost.core.api.FallbackPlans;
-import com.respawnhost.core.api.RespawnApiClient;
-import com.respawnhost.core.model.FixedTerm;
 import com.respawnhost.core.model.ModpackInfo;
 import com.respawnhost.core.model.ServerPlan;
+import com.respawnhost.core.order.OrderSession;
 import com.respawnhost.core.recommend.PlanRecommender;
 import com.respawnhost.integration.RespawnHostIntegrationFabric;
 import com.respawnhost.integration.config.RespawnConfig;
@@ -23,8 +21,6 @@ import net.minecraft.util.Util;
 import java.awt.Desktop;
 import java.net.URI;
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -32,18 +28,10 @@ public class OrderScreen extends Screen {
     private static final int ROW_HEIGHT = 30;
     private static final int LIST_LEFT_MARGIN = 40;
     private static final int ORDER_BUTTON_WIDTH = 110;
-    private static final List<Integer> TERM_OPTIONS = List.of(30, 90, 180, 360);
-    private static final List<String> REGION_OPTIONS = List.of("eu", "us");
 
     private final Screen parent;
-    private final RespawnApiClient apiClient;
+    private final OrderSession session;
     private final String modpackSlug;
-    private volatile List<ServerPlan> plans;
-    private volatile ModpackInfo modpackInfo;
-    private volatile boolean offline;
-    private boolean hourlySelected;
-    private int termDaysSelected = 30;
-    private String regionSelected;
     private ServerPlan recommended;
     private int listTop;
 
@@ -51,42 +39,14 @@ public class OrderScreen extends Screen {
         super(new TranslatableText(LangKeys.ORDER_TITLE));
         this.parent = parent;
         RespawnConfig config = RespawnConfig.get();
-        this.apiClient = new RespawnApiClient(config.apiBaseUrl(), config.gameShort(), config.panelBaseUrl());
         this.modpackSlug = ModpackDetector.detectModpackName();
-        String configRegion = config.region();
-        this.regionSelected = configRegion != null && REGION_OPTIONS.contains(configRegion.toLowerCase(Locale.ROOT))
-                ? configRegion.toLowerCase(Locale.ROOT)
-                : "eu";
-
-        CompletableFuture<List<ServerPlan>> plansFuture = apiClient.fetchPlans();
-        CompletableFuture<ModpackInfo> infoFuture = modpackSlug != null ? apiClient.fetchModpackInfo(modpackSlug) : null;
-        CompletableFuture<Void> done = infoFuture != null
-                ? CompletableFuture.allOf(plansFuture, infoFuture)
-                : plansFuture.thenAccept(ignored -> {
-                });
-        done.thenRun(() -> {
-            this.plans = plansFuture.join();
-            this.modpackInfo = infoFuture != null ? infoFuture.join() : null;
-            this.offline = isFallbackContent(this.plans);
-            MinecraftClient.getInstance().execute(() -> {
-                if (MinecraftClient.getInstance().currentScreen == this) {
-                    rebuildContent();
-                }
-            });
-        });
-    }
-
-    private static boolean isFallbackContent(List<ServerPlan> list) {
-        List<ServerPlan> fallback = FallbackPlans.get();
-        if (list.size() != fallback.size()) {
-            return false;
-        }
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getId() != fallback.get(i).getId()) {
-                return false;
+        this.session = new OrderSession(config.apiBaseUrl(), config.panelBaseUrl(), config.gameShort(),
+                config.region(), config.currency(), config.creatorCode(), modpackSlug);
+        session.load().thenRun(() -> MinecraftClient.getInstance().execute(() -> {
+            if (MinecraftClient.getInstance().currentScreen == this) {
+                rebuildContent();
             }
-        }
-        return true;
+        }));
     }
 
     private static String uiLang() {
@@ -123,23 +83,23 @@ public class OrderScreen extends Screen {
         int controlsTotal = controlWidth * 3 + controlGap * 2;
         int controlX = this.width / 2 - controlsTotal / 2;
 
-        addCycleButton(controlX, controlY, controlWidth, List.of(Boolean.FALSE, Boolean.TRUE), hourlySelected,
-                hourly -> new TranslatableText(hourly ? LangKeys.ORDER_MODEL_HOURLY : LangKeys.ORDER_MODEL_FIXED),
+        addCycleButton(controlX, controlY, controlWidth, OrderSession.MODELS, session.model(),
+                model -> new TranslatableText(OrderSession.modelKey(model)),
                 value -> {
-                    this.hourlySelected = value;
+                    session.model(value);
                     rebuildContent();
                 });
 
         ButtonWidget termButton = addCycleButton(controlX + controlWidth + controlGap, controlY, controlWidth,
-                TERM_OPTIONS, termDaysSelected,
+                OrderSession.TERMS, session.termDays(),
                 days -> new TranslatableText(LangKeys.ORDER_TERM_DAYS, days),
-                value -> this.termDaysSelected = value);
-        termButton.active = !hourlySelected;
+                value -> session.termDays(value));
+        termButton.active = session.termSelectable();
 
         addCycleButton(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth,
-                REGION_OPTIONS, regionSelected,
-                region -> new TranslatableText(LangKeys.ORDER_REGION, region.toUpperCase(Locale.ROOT)),
-                value -> this.regionSelected = value);
+                OrderSession.REGIONS, session.region(),
+                region -> new TranslatableText(LangKeys.ORDER_REGION, OrderSession.regionLabel(region)),
+                value -> session.region(value));
 
         addDrawableChild(new ButtonWidget(this.width / 2 - 100, this.height - 28, 200, 20,
                 new TranslatableText(LangKeys.ORDER_BACK), button -> close()));
@@ -152,10 +112,11 @@ public class OrderScreen extends Screen {
                     }
                 }));
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null || current.isEmpty()) {
             return;
         }
+        ModpackInfo modpackInfo = session.modpackInfo();
         recommended = PlanRecommender.recommend(current,
                 modpackInfo != null ? modpackInfo.getRecommendedRamMb() : null,
                 RespawnHostIntegrationFabric.loadedModCount());
@@ -168,10 +129,10 @@ public class OrderScreen extends Screen {
             ButtonWidget orderButton = new ButtonWidget(buttonX, y, ORDER_BUTTON_WIDTH, 20,
                     new TranslatableText(LangKeys.ORDER_ORDER_NOW),
                     button -> {
-                        apiClient.trackCreatorCode(RespawnConfig.get().creatorCode());
-                        openUri(apiClient.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang()));
+                        session.trackOrderClick();
+                        openUri(session.orderUrl(plan, uiLang()));
                     });
-            orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
+            orderButton.active = session.orderable(plan);
             addDrawableChild(orderButton);
             y += ROW_HEIGHT;
         }
@@ -195,6 +156,7 @@ public class OrderScreen extends Screen {
         super.render(matrices, mouseX, mouseY, delta);
         drawCenteredText(matrices, this.textRenderer, this.title, this.width / 2, 10, 0xFFFFFF);
 
+        ModpackInfo modpackInfo = session.modpackInfo();
         if (modpackSlug != null) {
             String displayName = modpackInfo != null && modpackInfo.getRecommendedRamMb() != null
                     ? modpackInfo.getName()
@@ -204,13 +166,13 @@ public class OrderScreen extends Screen {
                     this.width / 2, 52, 0x55FF55);
         }
 
-        if (offline) {
+        if (session.isOffline()) {
             drawCenteredText(matrices, this.textRenderer,
                     new TranslatableText(LangKeys.ORDER_OFFLINE),
                     this.width / 2, modpackSlug != null ? 64 : 52, 0xFFAA00);
         }
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null) {
             drawCenteredText(matrices, this.textRenderer,
                     new TranslatableText(LangKeys.ORDER_LOADING),
@@ -224,28 +186,17 @@ public class OrderScreen extends Screen {
                 break;
             }
             MutableText nameLine = plan == recommended
-                    ? new LiteralText(plan.getName()).append("  ")
+                    ? new LiteralText(plan.displayName()).append("  ")
                     .append(new TranslatableText(LangKeys.ORDER_RECOMMENDED))
-                    : new LiteralText(plan.getName());
+                    : new LiteralText(plan.displayName());
             drawTextWithShadow(matrices, this.textRenderer, nameLine, LIST_LEFT_MARGIN, y, 0xFFFFFF);
 
-            MutableText details = new TranslatableText(LangKeys.ORDER_RAM, plan.ramDisplay());
+            MutableText details = new LiteralText("");
             if (plan.slotsOrDefault() > 0) {
-                details = details.append("   ")
-                        .append(new TranslatableText(LangKeys.ORDER_SLOTS, plan.slotsOrDefault()));
+                details.append(new TranslatableText(LangKeys.ORDER_SLOTS, plan.slotsOrDefault())).append("   ");
             }
-            Text price = hourlySelected
-                    ? new TranslatableText(LangKeys.ORDER_PRICE_HOURLY, plan.getPriceHourly(), "EUR")
-                    : new TranslatableText(LangKeys.ORDER_PRICE, plan.getPriceMonthly(), "EUR");
-            details = details.append("   ").append(price);
-            if (!hourlySelected && plan.getFixedTerms() != null) {
-                for (FixedTerm term : plan.getFixedTerms()) {
-                    if (term.getTermDays() == termDaysSelected && term.getDiscountPercent() > 0) {
-                        details = details.append("   ")
-                                .append(new TranslatableText(LangKeys.ORDER_EFFECTIVE_MONTHLY, term.getEffectiveMonthly(), "EUR"));
-                        break;
-                    }
-                }
+            for (OrderSession.Line line : session.priceLines(plan, uiLang())) {
+                details.append(new TranslatableText(line.key, line.args)).append("   ");
             }
             drawTextWithShadow(matrices, this.textRenderer, details, LIST_LEFT_MARGIN, y + 12, 0xAAAAAA);
             y += ROW_HEIGHT;

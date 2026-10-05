@@ -1,10 +1,8 @@
 package com.respawnhost.integration.ui;
 
-import com.respawnhost.core.api.FallbackPlans;
-import com.respawnhost.core.api.RespawnApiClient;
-import com.respawnhost.core.model.FixedTerm;
 import com.respawnhost.core.model.ModpackInfo;
 import com.respawnhost.core.model.ServerPlan;
+import com.respawnhost.core.order.OrderSession;
 import com.respawnhost.core.recommend.PlanRecommender;
 import com.respawnhost.integration.config.RespawnConfig;
 import com.respawnhost.integration.modpack.ModpackDetector;
@@ -15,28 +13,19 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CompletableFuture;
 
 public class OrderScreen extends Screen {
     private static final int ROW_HEIGHT = 30;
     private static final int LIST_LEFT_MARGIN = 40;
     private static final int ORDER_BUTTON_WIDTH = 110;
-    private static final List<Integer> TERM_OPTIONS = List.of(30, 90, 180, 360);
-    private static final List<String> REGION_OPTIONS = List.of("eu", "us");
 
     private final Screen parent;
-    private final RespawnApiClient client;
+    private final OrderSession session;
     private final @Nullable String modpackSlug;
-    private volatile @Nullable List<ServerPlan> plans;
-    private volatile @Nullable ModpackInfo modpackInfo;
-    private volatile boolean offline;
-    private boolean hourlySelected;
-    private int termDaysSelected = 30;
-    private String regionSelected;
     private @Nullable ServerPlan recommended;
     private int listTop;
 
@@ -44,42 +33,14 @@ public class OrderScreen extends Screen {
         super(Component.translatable("screen.respawnhost_integration.order.title"));
         this.parent = parent;
         RespawnConfig config = RespawnConfig.get();
-        this.client = new RespawnApiClient(config.apiBaseUrl(), config.gameShort(), config.panelBaseUrl());
         this.modpackSlug = ModpackDetector.detectModpackName();
-        String configRegion = config.region();
-        this.regionSelected = configRegion != null && REGION_OPTIONS.contains(configRegion.toLowerCase(Locale.ROOT))
-                ? configRegion.toLowerCase(Locale.ROOT)
-                : "eu";
-
-        CompletableFuture<List<ServerPlan>> plansFuture = client.fetchPlans();
-        CompletableFuture<ModpackInfo> infoFuture = modpackSlug != null ? client.fetchModpackInfo(modpackSlug) : null;
-        CompletableFuture<Void> done = infoFuture != null
-                ? CompletableFuture.allOf(plansFuture, infoFuture)
-                : plansFuture.thenAccept(ignored -> {
-                });
-        done.thenRun(() -> {
-            this.plans = plansFuture.join();
-            this.modpackInfo = infoFuture != null ? infoFuture.join() : null;
-            this.offline = isFallbackContent(this.plans);
-            Minecraft.getInstance().execute(() -> {
-                if (Minecraft.getInstance().screen == this) {
-                    rebuildWidgets();
-                }
-            });
-        });
-    }
-
-    private static boolean isFallbackContent(List<ServerPlan> list) {
-        List<ServerPlan> fallback = FallbackPlans.get();
-        if (list.size() != fallback.size()) {
-            return false;
-        }
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getId() != fallback.get(i).getId()) {
-                return false;
+        this.session = new OrderSession(config.apiBaseUrl(), config.panelBaseUrl(), config.gameShort(),
+                config.region(), config.currency(), config.creatorCode(), modpackSlug);
+        session.load().thenRun(() -> Minecraft.getInstance().execute(() -> {
+            if (Minecraft.getInstance().screen == this) {
+                rebuildWidgets();
             }
-        }
-        return true;
+        }));
     }
 
     private static String uiLang() {
@@ -97,34 +58,33 @@ public class OrderScreen extends Screen {
         int controlsTotal = controlWidth * 3 + controlGap * 2;
         int controlX = this.width / 2 - controlsTotal / 2;
 
-        addRenderableWidget(CycleButton.<Boolean>builder(hourly -> Component.translatable(hourly
-                        ? "screen.respawnhost_integration.order.model_hourly"
-                        : "screen.respawnhost_integration.order.model_fixed"))
-                .withValues(Boolean.FALSE, Boolean.TRUE)
-                .withInitialValue(hourlySelected)
+        addRenderableWidget(CycleButton.<String>builder(model ->
+                        Component.translatable(OrderSession.modelKey(model)))
+                .withValues(OrderSession.MODELS)
+                .withInitialValue(session.model())
                 .displayOnlyValue()
                 .create(controlX, controlY, controlWidth, 20, Component.empty(), (button, value) -> {
-                    this.hourlySelected = value;
+                    session.model(value);
                     rebuildWidgets();
                 }));
 
         CycleButton<Integer> termButton = CycleButton.<Integer>builder(days ->
                         Component.translatable("screen.respawnhost_integration.order.term_days", days))
-                .withValues(TERM_OPTIONS)
-                .withInitialValue(termDaysSelected)
+                .withValues(OrderSession.TERMS)
+                .withInitialValue(session.termDays())
                 .displayOnlyValue()
                 .create(controlX + controlWidth + controlGap, controlY, controlWidth, 20, Component.empty(),
-                        (button, value) -> this.termDaysSelected = value);
-        termButton.active = !hourlySelected;
+                        (button, value) -> session.termDays(value));
+        termButton.active = session.termSelectable();
         addRenderableWidget(termButton);
 
         addRenderableWidget(CycleButton.<String>builder(region ->
-                        Component.translatable("screen.respawnhost_integration.order.region", region.toUpperCase(Locale.ROOT)))
-                .withValues(REGION_OPTIONS)
-                .withInitialValue(regionSelected)
+                        Component.translatable("screen.respawnhost_integration.order.region", OrderSession.regionLabel(region)))
+                .withValues(OrderSession.REGIONS)
+                .withInitialValue(session.region())
                 .displayOnlyValue()
                 .create(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth, 20, Component.empty(),
-                        (button, value) -> this.regionSelected = value));
+                        (button, value) -> session.region(value)));
 
         addRenderableWidget(Button.builder(Component.translatable("screen.respawnhost_integration.order.back"), button -> onClose())
                 .bounds(this.width / 2 - 100, this.height - 28, 200, 20)
@@ -139,10 +99,11 @@ public class OrderScreen extends Screen {
                 .bounds(this.width - ORDER_BUTTON_WIDTH - LIST_LEFT_MARGIN, this.height - 28, ORDER_BUTTON_WIDTH, 20)
                 .build());
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null || current.isEmpty()) {
             return;
         }
+        ModpackInfo modpackInfo = session.modpackInfo();
         recommended = PlanRecommender.recommend(current,
                 modpackInfo != null ? modpackInfo.getRecommendedRamMb() : null, ModpackDetector.loadedModCount());
         int y = listTop;
@@ -153,12 +114,12 @@ public class OrderScreen extends Screen {
             }
             Button orderButton = Button.builder(Component.translatable("screen.respawnhost_integration.order.order_now"),
                             button -> {
-                                client.trackCreatorCode(RespawnConfig.get().creatorCode());
-                                Util.getPlatform().openUri(client.buildOrderUrl(plan, hourlySelected, termDaysSelected, regionSelected, uiLang()));
+                                session.trackOrderClick();
+                                Util.getPlatform().openUri(session.orderUrl(plan, uiLang()));
                             })
                     .bounds(buttonX, y, ORDER_BUTTON_WIDTH, 20)
                     .build();
-            orderButton.active = hourlySelected ? plan.isAvailableHourly() : plan.isAvailableFixed();
+            orderButton.active = session.orderable(plan);
             addRenderableWidget(orderButton);
             y += ROW_HEIGHT;
         }
@@ -169,6 +130,7 @@ public class OrderScreen extends Screen {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
 
+        ModpackInfo modpackInfo = session.modpackInfo();
         if (modpackSlug != null) {
             String displayName = modpackInfo != null && modpackInfo.getRecommendedRamMb() != null
                     ? modpackInfo.getName()
@@ -178,13 +140,13 @@ public class OrderScreen extends Screen {
                     this.width / 2, 52, 0x55FF55);
         }
 
-        if (offline) {
+        if (session.isOffline()) {
             guiGraphics.drawCenteredString(this.font,
                     Component.translatable("screen.respawnhost_integration.order.offline"),
                     this.width / 2, modpackSlug != null ? 64 : 52, 0xFFAA00);
         }
 
-        List<ServerPlan> current = plans;
+        List<ServerPlan> current = session.plans();
         if (current == null) {
             guiGraphics.drawCenteredString(this.font,
                     Component.translatable("screen.respawnhost_integration.order.loading"),
@@ -198,30 +160,17 @@ public class OrderScreen extends Screen {
                 break;
             }
             Component nameLine = plan == recommended
-                    ? Component.literal(plan.getName()).append("  ")
+                    ? Component.literal(plan.displayName()).append("  ")
                             .append(Component.translatable("screen.respawnhost_integration.order.recommended"))
-                    : Component.literal(plan.getName());
+                    : Component.literal(plan.displayName());
             guiGraphics.drawString(this.font, nameLine, LIST_LEFT_MARGIN, y, 0xFFFFFF);
 
-            Component details = Component.translatable("screen.respawnhost_integration.order.ram", plan.ramDisplay());
+            MutableComponent details = Component.empty();
             if (plan.slotsOrDefault() > 0) {
-                details = details.copy()
-                        .append("   ")
-                        .append(Component.translatable("screen.respawnhost_integration.order.slots", plan.slotsOrDefault()));
+                details.append(Component.translatable("screen.respawnhost_integration.order.slots", plan.slotsOrDefault())).append("   ");
             }
-            Component price = hourlySelected
-                    ? Component.translatable("screen.respawnhost_integration.order.price_hourly", plan.getPriceHourly(), "EUR")
-                    : Component.translatable("screen.respawnhost_integration.order.price", plan.getPriceMonthly(), "EUR");
-            details = details.copy().append("   ").append(price);
-            if (!hourlySelected && plan.getFixedTerms() != null) {
-                for (FixedTerm term : plan.getFixedTerms()) {
-                    if (term.getTermDays() == termDaysSelected && term.getDiscountPercent() > 0) {
-                        details = details.copy()
-                                .append("   ")
-                                .append(Component.translatable("screen.respawnhost_integration.order.effective_monthly", term.getEffectiveMonthly(), "EUR"));
-                        break;
-                    }
-                }
+            for (OrderSession.Line line : session.priceLines(plan, uiLang())) {
+                details.append(Component.translatable(line.key, line.args)).append("   ");
             }
             guiGraphics.drawString(this.font, details, LIST_LEFT_MARGIN, y + 12, 0xAAAAAA);
             y += ROW_HEIGHT;

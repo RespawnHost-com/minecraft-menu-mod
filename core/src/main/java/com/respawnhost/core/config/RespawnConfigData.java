@@ -8,6 +8,8 @@ public class RespawnConfigData {
     private String panelBaseUrl = "https://panel.respawnhost.com";
     private String gameShort = "minecraft";
     private String region = "eu";
+    /** ISO code (EUR, USD, INR); empty = detect from the player's location. */
+    private String currency = "";
     private boolean showOrderButton = true;
 
     public String getCreatorCode() {
@@ -64,6 +66,14 @@ public class RespawnConfigData {
 
     public void setRegion(String region) {
         this.region = isBlank(region) ? "eu" : region;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency == null ? "" : currency.trim();
     }
 
     public boolean isShowOrderButton() {

@@ -31,8 +31,10 @@ public final class ConfigStore {
             try {
             reader = Files.newBufferedReader(file, StandardCharsets.UTF_8);
             com.google.gson.JsonObject json = GSON.fromJson(reader, com.google.gson.JsonObject.class);
-            if (json != null && !json.has("creator_code") && json.has("partner_id")) {
-                json.add("creator_code", json.remove("partner_id"));
+            for (String alias : new String[] {"ref_code", "partner_id"}) {
+                if (json != null && !json.has("creator_code") && json.has(alias)) {
+                    json.add("creator_code", json.remove(alias));
+                }
             }
             RespawnConfigData data = GSON.fromJson(json, RespawnConfigData.class);
             if (data != null) {
@@ -83,6 +85,7 @@ public final class ConfigStore {
         data.setPanelBaseUrl(data.getPanelBaseUrl());
         data.setGameShort(data.getGameShort());
         data.setRegion(data.getRegion());
+        data.setCurrency(data.getCurrency());
         return data;
     }
 }
