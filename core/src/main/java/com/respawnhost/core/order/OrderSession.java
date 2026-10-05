@@ -57,6 +57,7 @@ public final class OrderSession {
     private volatile List<ServerPlan> plans;
     private volatile ModpackInfo modpackInfo;
     private volatile CurrencyInfo currency = CurrencyInfo.EUR;
+    private volatile List<CurrencyInfo> currencies = Collections.singletonList(CurrencyInfo.EUR);
     private volatile Map<String, Boolean> ecoByRegion = Collections.emptyMap();
     private volatile double creatorDiscount;
 
@@ -76,7 +77,8 @@ public final class OrderSession {
         CompletableFuture<ModpackInfo> infoFuture = modpackSlug != null
                 ? client.fetchModpackInfo(modpackSlug)
                 : CompletableFuture.<ModpackInfo>completedFuture(null);
-        CompletableFuture<CurrencyInfo> currencyFuture = client.fetchCurrency(preferredCurrency);
+        CompletableFuture<String> currencyCodeFuture = client.fetchCurrencyCode(preferredCurrency);
+        CompletableFuture<List<CurrencyInfo>> currenciesFuture = client.fetchCurrencies();
         CompletableFuture<Double> discountFuture = client.fetchCreatorDiscount(creatorCode);
         final Map<String, CompletableFuture<Boolean>> ecoFutures = new HashMap<>();
         for (String r : REGIONS) {
@@ -85,7 +87,8 @@ public final class OrderSession {
         List<CompletableFuture<?>> all = new ArrayList<>(ecoFutures.values());
         all.add(plansFuture);
         all.add(infoFuture);
-        all.add(currencyFuture);
+        all.add(currencyCodeFuture);
+        all.add(currenciesFuture);
         all.add(discountFuture);
         return CompletableFuture.allOf(all.toArray(new CompletableFuture<?>[0])).thenRun(() -> {
             Map<String, Boolean> eco = new HashMap<>();
@@ -93,7 +96,8 @@ public final class OrderSession {
                 eco.put(entry.getKey(), entry.getValue().join());
             }
             ecoByRegion = eco;
-            currency = currencyFuture.join();
+            currencies = currenciesFuture.join();
+            currency(currencyCodeFuture.join());
             creatorDiscount = Math.max(0.0, Math.min(1.0, discountFuture.join()));
             modpackInfo = infoFuture.join();
             plans = plansFuture.join();
@@ -106,6 +110,11 @@ public final class OrderSession {
         this.currency = currency;
         this.ecoByRegion = ecoByRegion;
         this.creatorDiscount = creatorDiscount;
+    }
+
+    /** Test hook. */
+    void currencies(List<CurrencyInfo> currencies) {
+        this.currencies = currencies;
     }
 
     /** Null while loading. */
@@ -148,6 +157,28 @@ public final class OrderSession {
     public void region(String region) {
         if (REGIONS.contains(region)) {
             this.region = region;
+        }
+    }
+
+    public List<String> currencyCodes() {
+        List<String> codes = new ArrayList<>();
+        for (CurrencyInfo c : currencies) {
+            codes.add(c.getCode());
+        }
+        return codes;
+    }
+
+    public String currencyCode() {
+        return currency.getCode();
+    }
+
+    /** Display currency only; the checkout charges in the account currency. Unknown codes are ignored. */
+    public void currency(String code) {
+        for (CurrencyInfo c : currencies) {
+            if (c.getCode().equalsIgnoreCase(code)) {
+                currency = c;
+                return;
+            }
         }
     }
 

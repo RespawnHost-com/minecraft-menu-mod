@@ -78,9 +78,9 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         addDrawableChild(new ButtonWidget(controlX, controlY, controlWidth, 20, billingLabel(), button -> {
@@ -100,6 +100,12 @@ public class OrderScreen extends Screen {
                 new TranslatableText(LangKeys.ORDER_REGION, OrderSession.regionLabel(session.region())), button -> {
             session.region(next(OrderSession.REGIONS, session.region()));
             rebuildWidgets();
+        }));
+
+        addDrawableChild(new ButtonWidget(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth, 20,
+                new LiteralText(session.currencyCode()), button -> {
+            session.currency(next(session.currencyCodes(), session.currencyCode()));
+            button.setMessage(new LiteralText(session.currencyCode()));
         }));
 
         addDrawableChild(new ButtonWidget(this.width / 2 - 152, this.height - 28, 150, 20,

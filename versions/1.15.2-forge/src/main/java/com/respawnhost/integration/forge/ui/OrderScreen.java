@@ -80,9 +80,9 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         this.addButton(new Button(controlX, controlY, controlWidth, 20,
@@ -103,6 +103,12 @@ public class OrderScreen extends Screen {
                 regionLabel(), button -> {
             session.region(next(OrderSession.REGIONS, session.region()));
             button.setMessage(regionLabel());
+        }));
+
+        this.addButton(new Button(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth, 20,
+                session.currencyCode(), button -> {
+            session.currency(next(session.currencyCodes(), session.currencyCode()));
+            button.setMessage(session.currencyCode());
         }));
 
         this.addButton(new Button(this.width / 2 - 102, this.height - 28, 99, 20,

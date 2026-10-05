@@ -64,9 +64,9 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         addRenderableWidget(CycleButton.<String>builder(model ->
@@ -93,6 +93,12 @@ public class OrderScreen extends Screen {
                 .displayOnlyValue()
                 .create(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth, 20, Component.empty(),
                         (button, value) -> session.region(value)));
+
+        addRenderableWidget(CycleButton.<String>builder(Component::literal, session.currencyCode())
+                .withValues(session.currencyCodes())
+                .displayOnlyValue()
+                .create(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth, 20, Component.empty(),
+                        (button, value) -> session.currency(value)));
 
         addRenderableWidget(Button.builder(Component.translatable(LangKeys.ORDER_BACK), button -> onClose())
                 .bounds(this.width / 2 - 152, this.height - 28, 148, 20)

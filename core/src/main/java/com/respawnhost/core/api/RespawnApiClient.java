@@ -66,24 +66,20 @@ public final class RespawnApiClient {
         });
     }
 
-    /**
-     * Display currency: the configured ISO code, otherwise the visitor's currency
-     * from GeoIP, otherwise EUR.
-     */
-    public CompletableFuture<CurrencyInfo> fetchCurrency(String preferredCode) {
-        CompletableFuture<String> code = preferredCode != null && !preferredCode.trim().isEmpty()
+    /** Preferred currency code: the configured ISO code, otherwise the visitor's currency from GeoIP, otherwise EUR. */
+    public CompletableFuture<String> fetchCurrencyCode(String preferredCode) {
+        return preferredCode != null && !preferredCode.trim().isEmpty()
                 ? CompletableFuture.completedFuture(preferredCode.trim().toUpperCase(Locale.ROOT))
                 : getJson("/geo/currency", "EUR", body -> GSON.fromJson(body, JsonObject.class)
                         .getAsJsonObject("currency").get("code").getAsString());
-        CompletableFuture<List<CurrencyInfo>> all = getJson("/currencies",
-                Collections.<CurrencyInfo>emptyList(), body -> GSON.fromJson(body, CURRENCY_LIST_TYPE));
-        return code.thenCombine(all, (wanted, currencies) -> {
-            for (CurrencyInfo currency : currencies) {
-                if (currency.getCode().equalsIgnoreCase(wanted)) {
-                    return currency;
-                }
-            }
-            return CurrencyInfo.EUR;
+    }
+
+    /** All enabled display currencies; just EUR when the API is unreachable. */
+    public CompletableFuture<List<CurrencyInfo>> fetchCurrencies() {
+        List<CurrencyInfo> fallback = Collections.singletonList(CurrencyInfo.EUR);
+        return getJson("/currencies", fallback, body -> {
+            List<CurrencyInfo> currencies = GSON.fromJson(body, CURRENCY_LIST_TYPE);
+            return currencies == null || currencies.isEmpty() ? fallback : currencies;
         });
     }
 

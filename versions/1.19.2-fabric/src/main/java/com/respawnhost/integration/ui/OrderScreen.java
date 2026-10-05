@@ -76,14 +76,15 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         addDrawableChild(CyclingButtonWidget.<String>builder(model -> Text.translatable(OrderSession.modelKey(model)))
                 .values(OrderSession.MODELS)
                 .initially(session.model())
+                .omitKeyText()
                 .build(controlX, controlY, controlWidth, 20, Text.empty(), (button, value) -> {
                     session.model(value);
                     this.clearAndInit();
@@ -93,6 +94,7 @@ public class OrderScreen extends Screen {
                         Text.translatable(LangKeys.ORDER_TERM_DAYS, days))
                 .values(OrderSession.TERMS)
                 .initially(session.termDays())
+                .omitKeyText()
                 .build(controlX + controlWidth + controlGap, controlY, controlWidth, 20, Text.empty(),
                         (button, value) -> session.termDays(value));
         termButton.active = session.termSelectable();
@@ -102,8 +104,16 @@ public class OrderScreen extends Screen {
                         Text.translatable(LangKeys.ORDER_REGION, OrderSession.regionLabel(region)))
                 .values(OrderSession.REGIONS)
                 .initially(session.region())
+                .omitKeyText()
                 .build(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth, 20, Text.empty(),
                         (button, value) -> session.region(value)));
+
+        addDrawableChild(CyclingButtonWidget.<String>builder(Text::literal)
+                .values(session.currencyCodes())
+                .initially(session.currencyCode())
+                .omitKeyText()
+                .build(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth, 20, Text.empty(),
+                        (button, value) -> session.currency(value)));
 
         addDrawableChild(new ButtonWidget(this.width / 2 - 150, this.height - 28, 140, 20,
                 Text.translatable(LangKeys.ORDER_BACK), button -> close()));

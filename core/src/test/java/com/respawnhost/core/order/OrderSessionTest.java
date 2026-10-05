@@ -69,6 +69,17 @@ public class OrderSessionTest {
     }
 
     @Test
+    public void currencyCanBeSwitched() {
+        OrderSession s = session(CurrencyInfo.EUR, false, 0);
+        s.currencies(java.util.Arrays.asList(CurrencyInfo.EUR, USD));
+        assertEquals(java.util.Arrays.asList("EUR", "USD"), s.currencyCodes());
+        s.currency("usd");
+        assertEquals("$19.49", text(s.priceLines(plan, "en").get(0)));
+        s.currency("XYZ");
+        assertEquals("USD", s.currencyCode());
+    }
+
+    @Test
     public void hourlyAndOrderUrl() {
         OrderSession s = session(CurrencyInfo.EUR, true, 0);
         s.model(OrderSession.HOURLY);

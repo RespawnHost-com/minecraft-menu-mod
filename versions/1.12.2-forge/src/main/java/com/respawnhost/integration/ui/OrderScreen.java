@@ -27,6 +27,7 @@ public class OrderScreen extends GuiScreen {
     private static final int ID_REGION = 3;
     private static final int ID_BACK = 4;
     private static final int ID_CONFIG = 5;
+    private static final int ID_CURRENCY = 6;
     private static final int ID_ORDER_BASE = 100;
 
     private final GuiScreen parent;
@@ -89,9 +90,9 @@ public class OrderScreen extends GuiScreen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         this.buttonList.add(new GuiButton(ID_BILLING, controlX, controlY, controlWidth, 20,
@@ -105,6 +106,9 @@ public class OrderScreen extends GuiScreen {
         this.buttonList.add(new GuiButton(ID_REGION, controlX + (controlWidth + controlGap) * 2, controlY,
                 controlWidth, 20,
                 I18n.format(LangKeys.ORDER_REGION, OrderSession.regionLabel(session.region()))));
+
+        this.buttonList.add(new GuiButton(ID_CURRENCY, controlX + (controlWidth + controlGap) * 3, controlY,
+                controlWidth, 20, session.currencyCode()));
 
         this.buttonList.add(new GuiButton(ID_CONFIG, this.width - 116, 6, 110, 20,
                 I18n.format(LangKeys.CONFIG_TITLE)));
@@ -150,6 +154,10 @@ public class OrderScreen extends GuiScreen {
                 break;
             case ID_REGION:
                 session.region(next(OrderSession.REGIONS, session.region()));
+                initGui();
+                break;
+            case ID_CURRENCY:
+                session.currency(next(session.currencyCodes(), session.currencyCode()));
                 initGui();
                 break;
             case ID_BACK:

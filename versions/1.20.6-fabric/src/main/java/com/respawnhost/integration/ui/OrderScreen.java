@@ -63,9 +63,9 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         addDrawableChild(CyclingButtonWidget.<String>builder(model ->
@@ -95,6 +95,13 @@ public class OrderScreen extends Screen {
                 .omitKeyText()
                 .build(controlX + (controlWidth + controlGap) * 2, controlY, controlWidth, 20, Text.empty(),
                         (button, value) -> session.region(value)));
+
+        addDrawableChild(CyclingButtonWidget.<String>builder(Text::literal)
+                .values(session.currencyCodes())
+                .initially(session.currencyCode())
+                .omitKeyText()
+                .build(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth, 20, Text.empty(),
+                        (button, value) -> session.currency(value)));
 
         addDrawableChild(ButtonWidget.builder(Text.translatable(LangKeys.CONFIG_TITLE),
                         button -> MinecraftClient.getInstance().setScreen(new ConfigScreen(this)))

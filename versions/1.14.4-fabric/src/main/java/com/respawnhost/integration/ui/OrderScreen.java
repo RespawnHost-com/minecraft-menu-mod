@@ -78,9 +78,9 @@ public class OrderScreen extends Screen {
         listTop = showModpackLine ? 78 : 66;
 
         int controlY = 26;
-        int controlWidth = 100;
-        int controlGap = 8;
-        int controlsTotal = controlWidth * 3 + controlGap * 2;
+        int controlWidth = 80;
+        int controlGap = 6;
+        int controlsTotal = controlWidth * 4 + controlGap * 3;
         int controlX = this.width / 2 - controlsTotal / 2;
 
         addCycleButton(controlX, controlY, controlWidth, OrderSession.MODELS, session.model(),
@@ -100,6 +100,11 @@ public class OrderScreen extends Screen {
                 OrderSession.REGIONS, session.region(),
                 region -> I18n.translate(LangKeys.ORDER_REGION, OrderSession.regionLabel(region)),
                 value -> session.region(value));
+
+        addCycleButton(controlX + (controlWidth + controlGap) * 3, controlY, controlWidth,
+                session.currencyCodes(), session.currencyCode(),
+                code -> code,
+                value -> session.currency(value));
 
         addButton(new ButtonWidget(this.width / 2 - 100, this.height - 28, 200, 20,
                 I18n.translate(LangKeys.ORDER_BACK), button -> onClose()));
